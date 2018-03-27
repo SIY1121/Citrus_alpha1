@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+
+<Pane fx:id="rootPane" stylesheets="/ui/main.css" xmlns="http://javafx.com/javafx/8.0.121"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
+    <BorderPane fx:id="borderPane">
+        <top>
+            <MenuBar fx:id="menuBar">
+                <Menu text="ファイル">
+                    <MenuItem text="開く"/>
+                </Menu>
+                <Menu text="編集"/>
+                <Menu text="ヘルプ">
+                    <MenuItem text="バージョン情報" onAction="#onVersionInfo"/>
+                </Menu>
+            </MenuBar>
+        </top>
+        <center>
+            <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
+                <Pane minHeight="150">
+                    <ImageView fitHeight="150.0" fitWidth="150.0" preserveRatio="true">
+                        <image>
+                            <Image url="@../assets/icon.png"/>
+                        </image>
+                    </ImageView>
+                </Pane>
+                <!--<ScrollPane fx:id="timelineScrollPaneV">-->
+                <GridPane fx:id="gridPane">
+                    <rowConstraints>
+                        <RowConstraints percentHeight="100"/>
+                    </rowConstraints>
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="10"/>
+                        <ColumnConstraints percentWidth="90"/>
+                    </columnConstraints>
+                    <children>
+
+                        <ScrollPane fx:id="labelScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER">
+                            <VBox fx:id="timelineLabelVBox" onMouseDragged="#mouseDragged"
+                                  onMouseReleased="#mouseReleased"/>
+                            <GridPane.margin>
+                                <Insets bottom="13.0"/>
+                            </GridPane.margin>
+                        </ScrollPane>
+
+                        <ScrollPane fx:id="layerScrollPane" GridPane.columnIndex="1">
+                            <Pane>
+
+                                <VBox fx:id="timelineLayerVBox" onMouseDragged="#mouseDragged"
+                                      onMouseReleased="#mouseReleased"/>
+                                <Line endY="100.0" stroke="RED" fx:id="timelineCaret"/>
+
+                            </Pane>
+
+                        </ScrollPane>
+                    </children>
+                </GridPane>
+                <!--</ScrollPane>-->
+            </SplitPane>
+        </center>
+        <bottom>
+            <Button mnemonicParsing="false" text="Button" BorderPane.alignment="CENTER"/>
+        </bottom>
+    </BorderPane>
+</Pane>
