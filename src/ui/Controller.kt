@@ -64,7 +64,7 @@ class Controller : Initializable {
             val contextMenu = ContextMenu()
             val menuItem = MenuItem("テキスト")
             menuItem.setOnAction {
-                val l = TimeLineObject(TimeLineObject.Type.Text)
+                val l = TimeLineObject(objects.Shape())
                 l.prefHeight = 30.0
                 l.prefWidth = 100.0
                 l.style = "-fx-background-color:red"

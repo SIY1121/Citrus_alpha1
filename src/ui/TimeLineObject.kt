@@ -3,23 +3,14 @@ package ui
 import javafx.scene.control.Label
 import objects.CitrusObject
 
-class TimeLineObject(val type: Type) : Label(type.toName()) {
-    enum class Type {
-        Text, Image, Video;
-
-        fun toName(): String {
-            return when (this) {
-                Type.Text -> "テキスト"
-                Type.Image -> "画像"
-                Type.Video -> "動画"
-            }
-        }
-    }
-
-    lateinit var cObject: CitrusObject
+class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),CitrusObject.DisplayNameChangeListener {
 
     init {
+        cObject.displayNameChangeListener = this
+    }
 
+    override fun onDisplayNameChanged(name: String) {
+        text = name
     }
 
     fun onUpdate() {

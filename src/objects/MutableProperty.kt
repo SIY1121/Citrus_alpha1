@@ -1,18 +1,28 @@
 package objects
 
 import interpolation.Interpolation
+import interpolation.LinearInterpolation
 
 /**
  * キーフレームを持つプロパティ
  */
 class MutableProperty {
-
     /**
      * キーフレームのデータクラス
      */
     data class KeyFrame(var frame: Int, var interpolation: Interpolation, var value: Float)
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
+
+    var min = -10000f
+    var max = 10000f
+    var prefMin = -100f
+    var prefMax = 100f
+
+
+    init {
+        keyFrames.add(KeyFrame(1, LinearInterpolation(), 0f))
+    }
 
     /**
      * 指定されたフレーム時点での値を取得
