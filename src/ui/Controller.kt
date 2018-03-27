@@ -39,6 +39,11 @@ class Controller : Initializable {
 
     val selectedLabel: MutableList<TimeLineObject> = ArrayList()
 
+    var editMode = TimeLineObject.EditMode.None
+    var ofx : Double = 0.0
+    var ofy : Double = 0.0
+    var dragging : Boolean = false
+
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         //レイアウトバインド
         borderPane.prefWidthProperty().bind(rootPane.widthProperty())
@@ -71,6 +76,15 @@ class Controller : Initializable {
                 l.setOnMousePressed {
                     selectedLabel.add(l)
                 }
+                l.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
+                    override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
+                        if(dragging)return
+                        editMode = mode
+                        ofx = offsetX
+                        ofy = offsetY
+                        println(offsetX )
+                    }
+                }
                 pane.children.add(l)
             }
             contextMenu.items.add(menuItem)
@@ -82,36 +96,54 @@ class Controller : Initializable {
 
             timelineLayerVBox.children.add(pane)
         }
-        timelineCaret.endY = LayerCount*30.0
+        timelineCaret.endY = LayerCount * 30.0
 
     }
 
     fun mouseDragged(mouseEvent: MouseEvent) {
+        dragging = true
         if (selectedLabel.size > 0)
             for (l in selectedLabel) {
                 val scrollOffsetX = layerScrollPane.hvalue * (timelineLayerVBox.width - layerScrollPane.viewportBounds.width)
-                l.layoutX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
                 val scrollOffsetY = layerScrollPane.vvalue * (timelineLayerVBox.height - layerScrollPane.viewportBounds.height) - (splitPane.dividerPositions[0] * splitPane.height) - splitPane.layoutY - 2
-                l.layoutX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
 
-                if ((timelineLayerVBox.children[Math.round((mouseEvent.sceneY + scrollOffsetY) / 30).toInt()] as Pane) != (l.parent as Pane)) {
-                    (l.parent as Pane).children.remove(l)
-                    (timelineLayerVBox.children[Math.round((mouseEvent.sceneY + scrollOffsetY) / 30).toInt()] as Pane).children.add(l)
+                when (editMode) {
+                    TimeLineObject.EditMode.Move -> {
+                        l.layoutX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width - ofx
+                        //l.layoutX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width - ofy
+
+                        if ((timelineLayerVBox.children[Math.round((mouseEvent.sceneY + scrollOffsetY) / 30).toInt()] as Pane) != (l.parent as Pane)) {
+                            (l.parent as Pane).children.remove(l)
+                            (timelineLayerVBox.children[Math.round((mouseEvent.sceneY + scrollOffsetY) / 30).toInt()] as Pane).children.add(l)
+                        }
+                    }
+                    TimeLineObject.EditMode.IncrementLength -> {
+                        l.prefWidth = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width - l.layoutX
+                    }
+                    TimeLineObject.EditMode.DecrementLength -> {
+                        l.prefWidth = (l.layoutX + l.width) - (mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width)
+                        l.layoutX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
+
+                    }
                 }
             }
-        else{
+        else {
             val scrollOffsetX = layerScrollPane.hvalue * (timelineLayerVBox.width - layerScrollPane.viewportBounds.width)
             timelineCaret.startX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
-            timelineCaret.endX =mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
+            timelineCaret.endX = mouseEvent.sceneX + scrollOffsetX - labelScrollPane.width
         }
 
     }
 
     fun mouseReleased(mouseEvent: MouseEvent) {
+        for (l in selectedLabel)
+            l.onLayoutUpdate()
+
         selectedLabel.clear()
+        dragging = false
     }
 
     fun onVersionInfo(actionEvent: ActionEvent) {
-        Alert(Alert.AlertType.NONE,"Citrus alpha 0.0.1", ButtonType.OK).show()
+        Alert(Alert.AlertType.NONE, "Citrus alpha 0.0.1", ButtonType.OK).show()
     }
 }

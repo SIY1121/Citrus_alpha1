@@ -34,4 +34,9 @@ class Shape : DrawableObject() {
             }
         }
     }
+
+    override fun onLayoutUpdate() {
+        super.onLayoutUpdate()
+        displayName = "$start"
+    }
 }

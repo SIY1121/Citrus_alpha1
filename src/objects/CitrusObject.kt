@@ -16,7 +16,12 @@ open class CitrusObject {
     }
     var displayNameChangeListener : DisplayNameChangeListener? = null
 
+    /**
+     * タイムラインで動かされ終わった時に呼び出される
+     */
+    open fun onLayoutUpdate(){
 
+    }
 
     var start : Int = 0
     var end : Int = 1
