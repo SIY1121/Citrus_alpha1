@@ -1,14 +1,19 @@
 package ui
 
+import javafx.beans.InvalidationListener
+import javafx.beans.value.ObservableValue
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
 import javafx.scene.control.*
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.ScrollEvent
 import javafx.scene.layout.*
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
+import javafx.scene.canvas.Canvas
+import javafx.scene.paint.Color
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
@@ -34,15 +39,21 @@ class Controller : Initializable {
     lateinit var splitPane: SplitPane
     @FXML
     lateinit var timelineCaret: Line
+    @FXML
+    lateinit var timelineAxis: Canvas
+    @FXML
+    lateinit var slider : Slider
 
     val LayerCount = 20
 
     val selectedLabel: MutableList<TimeLineObject> = ArrayList()
 
     var editMode = TimeLineObject.EditMode.None
-    var ofx : Double = 0.0
-    var ofy : Double = 0.0
-    var dragging : Boolean = false
+    var ofx: Double = 0.0
+    var ofy: Double = 0.0
+    var dragging: Boolean = false
+    var pixelPerFrame: Double = 1.0
+    val delta = 100.0
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         //レイアウトバインド
@@ -50,6 +61,19 @@ class Controller : Initializable {
         borderPane.prefHeightProperty().bind(rootPane.heightProperty())
         gridPane.prefWidthProperty().bind(splitPane.widthProperty())
         labelScrollPane.vvalueProperty().bindBidirectional(layerScrollPane.vvalueProperty())
+        gridPane.widthProperty().addListener(InvalidationListener {
+            timelineAxis.width = gridPane.width - 80
+            drawTimeline()
+        })
+
+        layerScrollPane.hvalueProperty().addListener(InvalidationListener {
+            drawTimeline()
+        })
+        slider.valueProperty().addListener { _, _, newValue ->
+            pixelPerFrame = newValue.toDouble()
+            drawTimeline()
+        }
+
 
         //タイムライン生成
         for (i in 0 until LayerCount) {
@@ -78,11 +102,11 @@ class Controller : Initializable {
                 }
                 l.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
                     override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
-                        if(dragging)return
+                        if (dragging) return
                         editMode = mode
                         ofx = offsetX
                         ofy = offsetY
-                        println(offsetX )
+                        println(offsetX)
                     }
                 }
                 pane.children.add(l)
@@ -145,5 +169,21 @@ class Controller : Initializable {
 
     fun onVersionInfo(actionEvent: ActionEvent) {
         Alert(Alert.AlertType.NONE, "Citrus alpha 0.0.1", ButtonType.OK).show()
+    }
+
+    fun onScroll(scrollEvent: ScrollEvent) {
+        println(scrollEvent.deltaX)
+    }
+
+    fun drawTimeline(){
+        val g = timelineAxis.graphicsContext2D
+        g.fill = Color.WHITE
+        g.fillRect(0.0, 0.0, 1000.0, 20.0)
+        g.fill = Color.BLACK
+        g.stroke = Color.RED
+        g.font = Font(15.0)
+        for (i in 0..10) {
+            g.fillText("${i*delta}s",i*delta*pixelPerFrame,20.0)
+        }
     }
 }

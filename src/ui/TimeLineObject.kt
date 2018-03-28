@@ -48,7 +48,6 @@ class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),
     }
     var editModeChangeListener : EditModeChangeListener? = null
 
-
     fun onLayoutUpdate() {
         cObject.onLayoutUpdate()
     }
