@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ScrollBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+
+<?import java.lang.Double?>
+<GridPane fx:id="timelineRootPane" stylesheets="/ui/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.TimelineController">
+    <rowConstraints>
+        <RowConstraints minHeight="10" prefHeight="10" />
+        <RowConstraints minHeight="10" prefHeight="15" />
+        <RowConstraints minHeight="20" prefHeight="20" />
+        <RowConstraints vgrow="ALWAYS" />
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints maxWidth="80" minWidth="80" />
+        <ColumnConstraints hgrow="ALWAYS" />
+    </columnConstraints>
+
+    <ChoiceBox fx:id="sceneChoiceBox"  style="-fx-font-size:11px" prefHeight="20.0" maxHeight="20.0" minHeight="20.0" prefWidth="80.0" GridPane.rowSpan="2" />
+
+    <ScrollBar fx:id="hScrollBar" visibleAmount="0.2" GridPane.columnIndex="1" />
+
+    <Slider fx:id="scaleSlider" max="10" min="0.1" GridPane.rowIndex="2"/>
+
+    <Pane GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2" >
+        <Canvas fx:id="timelineAxis" height="35" />
+    </Pane>
+
+    <ScrollPane fx:id="labelScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER" GridPane.rowIndex="3">
+        <VBox fx:id="labelVBox" />
+    </ScrollPane>
+
+    <ScrollPane fx:id="layerScrollPane" hbarPolicy="NEVER" GridPane.columnIndex="1" GridPane.rowIndex="3">
+        <Pane>
+
+            <VBox fx:id="layerVBox"  onMousePressed="#LayerScrollPane_onMousePressed" onMouseDragged="#LayerScrollPane_onMouseDragged" onMouseReleased="#LayerScrollPane_onMouseReleased"  />
+            <Line fx:id="caret" endY="100.0" stroke="RED" />
+
+        </Pane>
+
+    </ScrollPane>
+
+</GridPane>

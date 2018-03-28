@@ -40,42 +40,7 @@
                         </image>
                     </ImageView>
                 </Pane>
-                <!--<ScrollPane fx:id="timelineScrollPaneV">-->
-                <GridPane fx:id="gridPane">
-                    <rowConstraints>
-                        <RowConstraints minHeight="20" />
-                        <RowConstraints />
-                    </rowConstraints>
-                    <columnConstraints>
-                        <ColumnConstraints minWidth="80" />
-                        <ColumnConstraints />
-                    </columnConstraints>
-                    <children>
-
-                        <Slider fx:id="slider" min="0.1" max="10"/>
-
-                        <Canvas fx:id="timelineAxis" height="20" GridPane.columnIndex="1" />
-
-                        <ScrollPane fx:id="labelScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER" GridPane.rowIndex="1">
-                            <VBox fx:id="timelineLabelVBox" onMouseDragged="#mouseDragged" onMouseReleased="#mouseReleased" />
-                            <GridPane.margin>
-                                <Insets bottom="13.0" />
-                            </GridPane.margin>
-                        </ScrollPane>
-
-                        <ScrollPane fx:id="layerScrollPane" onScroll="#onScroll" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                            <Pane>
-
-                                <VBox fx:id="timelineLayerVBox" onMouseDragged="#mouseDragged" onMouseReleased="#mouseReleased" />
-                                <Line fx:id="timelineCaret" endY="100.0" stroke="RED" />
-
-                            </Pane>
-
-                        </ScrollPane>
-
-                    </children>
-                </GridPane>
-                <!--</ScrollPane>-->
+                <fx:include source="timeline.fxml" fx:id="timeline"/>
             </SplitPane>
         </center>
         <bottom>
