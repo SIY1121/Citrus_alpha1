@@ -4,10 +4,11 @@ import javafx.event.EventHandler
 import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Pane
 import objects.CitrusObject
 import util.Statics
 
-class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),
+class TimeLineObject(var cObject : CitrusObject) : Pane(),
         CitrusObject.DisplayNameChangeListener{
 
     private val mouseMove = EventHandler<MouseEvent> {
@@ -38,7 +39,7 @@ class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),
     }
 
     override fun onDisplayNameChanged(name: String) {
-        text = name
+        //text = name
     }
 
     enum class EditMode{

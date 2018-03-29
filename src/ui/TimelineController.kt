@@ -100,18 +100,13 @@ class TimelineController : Initializable {
     }
 
     fun generateLayer() {
-        //ラベル生成
-        val label = Label("Layer${layerCount + 1}")
-        label.font = Font(15.0)
-        label.minHeight = layerHeight
-        label.prefWidth = 80.0
-        label.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434" else "#383838"
-        labelVBox.children.add(label)
+
         //レイヤーペイン生成
-        val pane = Pane()
-        pane.minHeight = layerHeight
-        pane.minWidth = 2000.0
-        pane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434" else "#383838"
+        val layerPane = Pane()
+        layerPane.minHeight = layerHeight
+        layerPane.maxHeight = layerHeight
+        layerPane.minWidth = 2000.0
+        layerPane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434" else "#383838"
 
         //サブメニュー
         val menu = ContextMenu()
@@ -121,7 +116,7 @@ class TimelineController : Initializable {
         val thisLayer = layerCount
         menuShape.setOnAction {
             val o = TimeLineObject(Shape())
-            o.prefHeight = layerHeight
+            o.prefHeight = layerHeight*2
             o.style = "-fx-background-color:red"
             o.prefWidth = 200.0
             o.cObject.layer = thisLayer
@@ -139,15 +134,49 @@ class TimelineController : Initializable {
                 }
             }
 
-            pane.children.add(o)
+            layerPane.children.add(o)
+            layerScrollPane.layout()
         }
         menuObject.items.add(menuShape)
-        pane.setOnMouseClicked {
+        layerPane.setOnMouseClicked {
             if (it.button == MouseButton.SECONDARY)
-                menu.show(pane, it.screenX, it.screenY)
+                menu.show(layerPane, it.screenX, it.screenY)
         }
 
-        layerVBox.children.add(pane)
+        //label.minHeightProperty().bind(pane.heightProperty())
+        //pane.heightProperty().addListener({_,_,n->println(n)})
+
+        layerVBox.children.add(layerPane)
+        //ラベル生成
+        val labelPane = VBox()
+        labelPane.minHeight = layerHeight
+        labelPane.maxHeight = layerHeight
+        labelPane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434" else "#383838"
+        labelVBox.children.add(labelPane)
+
+        val label = Label("Layer${layerCount + 1}")
+        label.font = Font(15.0)
+        label.prefWidth = 80.0
+        label.minHeight = 20.0
+        labelPane.children.add(label)
+
+        val toggle = ToggleButton()
+        toggle.maxHeight = 10.0
+        toggle.minWidth = 30.0
+        toggle.style="-fx-font-size:2px"
+        toggle.setOnAction {
+            layerScrollPane.requestFocus()
+            if(toggle.isSelected){
+                layerPane.maxHeight = Double.POSITIVE_INFINITY
+                layerScrollPane.layout()//TODO LabelPaneのサイズ変更がおくれる原因の調査
+            }else{
+                layerPane.maxHeight = layerHeight
+                layerScrollPane.layout()
+            }
+        }
+        labelPane.children.add(toggle)
+
+        labelPane.minHeightProperty().bind(layerPane.heightProperty())
 
         layerCount++
 
@@ -185,9 +214,13 @@ class TimelineController : Initializable {
                         o.layoutX = mouseEvent.x - selectedOffsetX
 
                         if (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] != o.parent) {
-                            (o.parent as Pane).children.remove(o)
+                            val src = (o.parent as Pane)
+                            val dst = (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] as Pane)
+                            src.children.remove(o)
                             o.cObject.layer = (mouseEvent.y / layerHeight).toInt()
-                            (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] as Pane).children.add(o)
+                            dst.children.add(o)
+
+                            layerScrollPane.layout()
                         }
 
                     }
