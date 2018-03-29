@@ -1,13 +1,14 @@
 package objects
 
+import annotation.CObject
 import com.jogamp.opengl.GL
-import com.jogamp.opengl.GL2GL3.GL_LINE
-import com.jogamp.opengl.GL2GL3.GL_LINE_LOOP
+import annotation.CProperty
 
 /**
  * 描画が発生する小向ジェクトの親クラス
  * 座標、拡大率、透明度などをもつ
  */
+@CObject("描画")
 open class DrawableObject:CitrusObject() {
     /**
      * 描画モード
@@ -19,12 +20,18 @@ open class DrawableObject:CitrusObject() {
     var selected : Boolean = false
     var enabledSelectedOutline : Boolean = true
 
+    @CProperty("X",0)
     val x = MutableProperty()
+    @CProperty("Y",1)
     val y = MutableProperty()
+    @CProperty("Z",2)
     val z = MutableProperty()
 
+    @CProperty("拡大率",3)
     val scale = MutableProperty()
+    @CProperty("透明度",4)
     val alpha = MutableProperty()
+    @CProperty("回転",5)
     val rotate = MutableProperty()
 
 

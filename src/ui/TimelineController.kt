@@ -197,7 +197,7 @@ class TimelineController : Initializable {
     }
 
     fun LayerScrollPane_onMousePressed(mouseEvent: MouseEvent) {
-
+        if(mouseEvent.button!=MouseButton.PRIMARY)return
         selectedOrigin = mouseEvent.x
         dragging = true
 
@@ -206,6 +206,7 @@ class TimelineController : Initializable {
     }
 
     fun LayerScrollPane_onMouseDragged(mouseEvent: MouseEvent) {
+        if(mouseEvent.button!=MouseButton.PRIMARY)return
         if (selectedObjects.isNotEmpty())
             for ((i, o) in selectedObjects.withIndex()) {
                 when (editMode) {
@@ -229,6 +230,9 @@ class TimelineController : Initializable {
                         o.layoutX = mouseEvent.x
                         o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] - selectedOffsetX
                     }
+                    TimeLineObject.EditMode.None->{
+                        //Nothing to do
+                    }
                 }
             }
         else{
@@ -238,6 +242,8 @@ class TimelineController : Initializable {
     }
 
     fun LayerScrollPane_onMouseReleased(mouseEvent: MouseEvent) {
+        if(mouseEvent.button!=MouseButton.PRIMARY)return
+
         dragging = false
 
         for(o in selectedObjects)

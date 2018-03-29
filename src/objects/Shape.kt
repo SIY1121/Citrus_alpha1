@@ -1,8 +1,11 @@
 package objects
 
+import annotation.CObject
 import com.jogamp.opengl.GL
+import annotation.CProperty
 
-open class Shape : DrawableObject() {
+@CObject("図形")
+class Shape : DrawableObject() {
     enum class Type {
         Triangle, Rectangle, Ellipse
     }
@@ -10,11 +13,9 @@ open class Shape : DrawableObject() {
     override val id = "citrus/shape"
     override val name = "図形"
 
-    var type: Type = Type.Triangle
-        set(value) {
-            field = value
-            displayName = "図形 $type"
-        }
+    @CProperty("種類",0)
+    val selectableProperty = SelectableProperty(listOf("三角形","四角形","円"))
+
 
     init{
         displayName = "図形"
@@ -22,7 +23,7 @@ open class Shape : DrawableObject() {
 
     override fun onDraw(gl: GL, mode: DrawMode) {
         super.onDraw(gl, mode)
-        when (type) {
+        when (selectableProperty.selectedIndex.toType()) {
             Type.Triangle -> {
 
             }
@@ -34,9 +35,17 @@ open class Shape : DrawableObject() {
             }
         }
     }
+    fun Int.toType():Type{
+        return when(this){
+            0->Type.Triangle
+            1->Type.Rectangle
+            2->Type.Ellipse
+            else ->Type.Triangle
+        }
+    }
 
     override fun onLayoutUpdate() {
         super.onLayoutUpdate()
-        displayName = "$start"
+        displayName = "${selectableProperty.selectedIndex.toType()}"
     }
 }
