@@ -13,6 +13,7 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import objects.Shape
+import util.Statics
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
@@ -43,15 +44,18 @@ class TimelineController : Initializable {
     var layerCount = 0
     val layerHeight = 30.0
 
-    var pixelPerFrame = 2.0
+    companion object {
+
+        var pixelPerFrame = 2.0
+    }
     var tick = 30
 
-    val offsetX : Double
-        get() = layerScrollPane.hvalue*(layerVBox.width - layerScrollPane.viewportBounds.width)
+    val offsetX: Double
+        get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
 
-    var selectedObjects : MutableList<TimeLineObject> = ArrayList()
+    var selectedObjects: MutableList<TimeLineObject> = ArrayList()
     //var selectedObjectsOldX : MutableList<Double> = ArrayList()
-    var selectedObjectOldWidth : MutableList<Double> = ArrayList()
+    var selectedObjectOldWidth: MutableList<Double> = ArrayList()
     var dragging = false
     var selectedOffsetX = 0.0
     var selectedOrigin = 0.0
@@ -60,12 +64,19 @@ class TimelineController : Initializable {
     override fun initialize(location: URL?, resources: ResourceBundle?) {
 
         labelScrollPane.vvalueProperty().bindBidirectional(layerScrollPane.vvalueProperty())
-        timelineRootPane.widthProperty().addListener({_,_,n->
-            timelineAxis.width = n.toDouble()-80
+        timelineRootPane.widthProperty().addListener({ _, _, n ->
+            timelineAxis.width = n.toDouble() - 80
             drawAxis()
         })
-        scaleSlider.valueProperty().addListener({_,_,n->
+        scaleSlider.valueProperty().addListener({ _, _, n ->
             pixelPerFrame = n.toDouble()
+
+            for(pane in layerVBox.children)
+                if(pane is Pane)
+                for(o in pane.children){
+                    (o as? TimeLineObject)?.onScaleChanged()
+                }
+
             drawAxis()
         })
 
@@ -78,15 +89,9 @@ class TimelineController : Initializable {
             drawAxis()
         })
         layerScrollPane.setOnKeyPressed { it.consume() }
-//        layerScrollPane.setOnScroll {
-//            if(it.deltaY>0)
-//                layerScrollPane.hvalue+=0.05
-//            else if(it.deltaY < 0)
-//                layerScrollPane.hvalue-=0.05
-//
-//        }
 
-        sceneChoiceBox.items.addAll(arrayOf("Root","Scene1","Scene2","Scene3"))
+
+        sceneChoiceBox.items.addAll(arrayOf("Root", "Scene1", "Scene2", "Scene3"))
 
         for (i in 0..10)
             generateLayer()
@@ -113,19 +118,21 @@ class TimelineController : Initializable {
         val menuObject = Menu("オブジェクトの追加")
         menu.items.add(menuObject)
         val menuShape = MenuItem("図形")
+        val thisLayer = layerCount
         menuShape.setOnAction {
             val o = TimeLineObject(Shape())
             o.prefHeight = layerHeight
             o.style = "-fx-background-color:red"
             o.prefWidth = 200.0
+            o.cObject.layer = thisLayer
             o.setOnMousePressed {
                 selectedObjects.add(o)
                 //selectedObjectsOldX.add(o.layoutX)
                 selectedObjectOldWidth.add(o.width)
             }
-            o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener{
+            o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
                 override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
-                    if(!dragging){
+                    if (!dragging) {
                         editMode = mode
                         selectedOffsetX = offsetX
                     }
@@ -136,25 +143,28 @@ class TimelineController : Initializable {
         }
         menuObject.items.add(menuShape)
         pane.setOnMouseClicked {
-            if(it.button==MouseButton.SECONDARY)
-                menu.show(pane,it.screenX,it.screenY)
+            if (it.button == MouseButton.SECONDARY)
+                menu.show(pane, it.screenX, it.screenY)
         }
 
         layerVBox.children.add(pane)
 
         layerCount++
+
+        Statics.project.Layer.add(ArrayList())
+        caret.endY = layerCount * layerHeight
     }
 
-    fun drawAxis(){
+    fun drawAxis() {
         val g = timelineAxis.graphicsContext2D
-        g.clearRect(0.0,0.0,g.canvas.width,g.canvas.height)
+        g.clearRect(0.0, 0.0, g.canvas.width, g.canvas.height)
         g.fill = Color.WHITE
         g.stroke = Color.WHITE
         g.font = Font(10.0)
-        for(i in 0..20){
-            val x = i*tick*pixelPerFrame - offsetX
-            g.fillText("${i*tick}f",x,20.0)
-            g.strokeLine(x,20.0,x,35.0)
+        for (i in 0..20) {
+            val x = i * tick * pixelPerFrame - offsetX
+            g.fillText("${i * tick}f", x, 20.0)
+            g.strokeLine(x, 20.0, x, 35.0)
         }
     }
 
@@ -162,33 +172,45 @@ class TimelineController : Initializable {
 
         selectedOrigin = mouseEvent.x
         dragging = true
+
+        if(selectedObjects.isEmpty() && mouseEvent.button==MouseButton.PRIMARY)
+            caret.layoutX = mouseEvent.x
     }
 
     fun LayerScrollPane_onMouseDragged(mouseEvent: MouseEvent) {
-        for((i, o) in selectedObjects.withIndex()){
-            when(editMode){
-                TimeLineObject.EditMode.Move->{
-                    o.layoutX = mouseEvent.x  - selectedOffsetX
+        if (selectedObjects.isNotEmpty())
+            for ((i, o) in selectedObjects.withIndex()) {
+                when (editMode) {
+                    TimeLineObject.EditMode.Move -> {
+                        o.layoutX = mouseEvent.x - selectedOffsetX
 
-                    if(layerVBox.children[(mouseEvent.y/layerHeight).toInt()] != o.parent){
-                        (o.parent as Pane).children.remove(o)
-                        (layerVBox.children[(mouseEvent.y/layerHeight).toInt()] as Pane).children.add(o)
+                        if (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] != o.parent) {
+                            (o.parent as Pane).children.remove(o)
+                            o.cObject.layer = (mouseEvent.y / layerHeight).toInt()
+                            (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] as Pane).children.add(o)
+                        }
+
                     }
-
-                }
-                TimeLineObject.EditMode.IncrementLength->
+                    TimeLineObject.EditMode.IncrementLength ->
                         o.prefWidth = mouseEvent.x - o.layoutX
-                TimeLineObject.EditMode.DecrementLength->
-                {
-                    o.layoutX = mouseEvent.x
-                    o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] -selectedOffsetX
+                    TimeLineObject.EditMode.DecrementLength -> {
+                        o.layoutX = mouseEvent.x
+                        o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] - selectedOffsetX
+                    }
                 }
             }
+        else{
+            caret.layoutX = mouseEvent.x
         }
+
     }
 
     fun LayerScrollPane_onMouseReleased(mouseEvent: MouseEvent) {
         dragging = false
+
+        for(o in selectedObjects)
+            o.onMove()
+
         selectedObjects.clear()
         selectedObjectOldWidth.clear()
     }

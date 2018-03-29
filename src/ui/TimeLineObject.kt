@@ -5,6 +5,7 @@ import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import objects.CitrusObject
+import util.Statics
 
 class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),
         CitrusObject.DisplayNameChangeListener{
@@ -48,8 +49,17 @@ class TimeLineObject(var cObject : CitrusObject) : Label(cObject.displayName),
     }
     var editModeChangeListener : EditModeChangeListener? = null
 
-    fun onLayoutUpdate() {
+    fun onMove() {
+        cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
+        cObject.end = ((layoutX + width) / TimelineController.pixelPerFrame).toInt()
+
+
         cObject.onLayoutUpdate()
+    }
+
+    fun onScaleChanged(){
+        layoutX = cObject.start * TimelineController.pixelPerFrame
+        prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
     }
 
 
