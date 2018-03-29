@@ -2,7 +2,7 @@ package objects
 
 import com.jogamp.opengl.GL
 
-class Shape : DrawableObject() {
+open class Shape : DrawableObject() {
     enum class Type {
         Triangle, Rectangle, Ellipse
     }

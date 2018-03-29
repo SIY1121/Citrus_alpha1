@@ -122,7 +122,6 @@ class TimelineController : Initializable {
             o.cObject.layer = thisLayer
             o.setOnMousePressed {
                 selectedObjects.add(o)
-                //selectedObjectsOldX.add(o.layoutX)
                 selectedObjectOldWidth.add(o.width)
             }
             o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
