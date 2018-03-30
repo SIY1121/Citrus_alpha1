@@ -14,24 +14,29 @@ class MutableProperty {
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
-    var min = -10000.0
-    var max = 10000.0
+    var min = -1000.0
+    var max = 1000.0
     var prefMin = -100.0
     var prefMax = 100.0
 
 
     init {
-        keyFrames.add(KeyFrame(1, LinearInterpolation(), 0.0))
-        keyFrames.add(KeyFrame(100, LinearInterpolation(), 0.0))//TODO 最後のキーフレームを、オブジェクトの長さに追従させる
+        keyFrames.add(KeyFrame(0, LinearInterpolation(), 0.0))
+        //keyFrames.add(KeyFrame(Int.MAX_VALUE, LinearInterpolation(), 0.0))//TODO 最後のキーフレームを、オブジェクトの長さに追従させる
     }
 
     /**
      * 指定されたフレーム時点での値を取得
      */
     fun value(frame: Int): Double {
-        val index = getKeyFrameIndex(frame)
-        val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
-        return keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+        return if(keyFrames.size==1)
+            keyFrames[0].value
+        else{
+            val index = getKeyFrameIndex(frame)
+            val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
+            keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+        }
+
     }
 
     /**

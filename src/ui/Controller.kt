@@ -15,6 +15,7 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import util.Statics
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
@@ -33,17 +34,31 @@ class Controller : Initializable {
     lateinit var timelineController: TimelineController
     @FXML
     lateinit var glCanvas: SwingNode
+    @FXML
+    lateinit var canvasWrapper : Pane
+
+
+    lateinit var canvas : GlCanvas
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
-
         println("initialize")
+        canvas = GlCanvas()
+        timelineController.glCanvas = canvas
 
         borderPane.prefWidthProperty().bind(rootPane.widthProperty())
         borderPane.prefHeightProperty().bind(rootPane.heightProperty())
+        canvasWrapper.heightProperty().addListener(listener)
+        canvasWrapper.widthProperty().addListener(listener)
 
-        glCanvas.content = GlCanvas()
+        glCanvas.content = canvas
         println("gl comp")
 
+    }
+
+    val listener = InvalidationListener{
+        val w = canvasWrapper.width - Statics.project.width.toDouble()/Statics.project.height*canvasWrapper.height
+        AnchorPane.setLeftAnchor(glCanvas,w/2.0)
+        AnchorPane.setRightAnchor(glCanvas,w/2.0)
     }
 
     fun onVersionInfo(actionEvent: ActionEvent) {

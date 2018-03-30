@@ -3,6 +3,7 @@ package objects
 import annotation.CObject
 import com.jogamp.opengl.GL
 import annotation.CProperty
+import com.jogamp.opengl.GL2
 
 @CObject("図形")
 class Shape : DrawableObject() {
@@ -21,19 +22,30 @@ class Shape : DrawableObject() {
         displayName = "図形"
     }
 
-    override fun onDraw(gl: GL, mode: DrawMode) {
+    override fun onDraw(gl: GL2, mode: DrawMode) {
         super.onDraw(gl, mode)
         when (selectableProperty.selectedIndex.toType()) {
             Type.Triangle -> {
+                gl.glBegin(GL2.GL_TRIANGLES)
+                gl.glVertex3d(0.0,0.0,-1.0)
+                gl.glVertex3d(100.0,0.0,-1.0)
+                gl.glVertex3d(100.0,100.0,-1.0)
+                gl.glEnd()
 
             }
             Type.Rectangle -> {
-
+                gl.glBegin(GL2.GL_QUADS)
+                gl.glVertex3d(-960.0 + x.value(frame),-540.0 + y.value(frame),z.value(frame))
+                gl.glVertex3d(-960.0+ x.value(frame),540.0 + y.value(frame),z.value(frame))
+                gl.glVertex3d(960.0+ x.value(frame),540.0 + y.value(frame),z.value(frame))
+                gl.glVertex3d(960.0+ x.value(frame),-540.0 + y.value(frame),z.value(frame))
+                gl.glEnd()
             }
             Type.Ellipse -> {
 
             }
         }
+
     }
     fun Int.toType():Type{
         return when(this){
@@ -46,6 +58,6 @@ class Shape : DrawableObject() {
 
     override fun onLayoutUpdate() {
         super.onLayoutUpdate()
-        displayName = "${selectableProperty.selectedIndex.toType()}"
+        //displayName = "${selectableProperty.selectedIndex.toType()}"
     }
 }

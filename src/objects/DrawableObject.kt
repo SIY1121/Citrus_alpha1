@@ -3,13 +3,15 @@ package objects
 import annotation.CObject
 import com.jogamp.opengl.GL
 import annotation.CProperty
+import com.jogamp.opengl.GL2
+import ui.GlCanvas
 
 /**
  * 描画が発生する小向ジェクトの親クラス
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")
-open class DrawableObject:CitrusObject() {
+abstract class DrawableObject:CitrusObject() {
     /**
      * 描画モード
      */
@@ -35,10 +37,12 @@ open class DrawableObject:CitrusObject() {
     val rotate = MutableProperty()
 
 
-    open fun onDraw(gl: GL, mode : DrawMode){
+    open fun onDraw(gl: GL2, mode : DrawMode){
         if(mode == DrawMode.Preview && enabledSelectedOutline && selected){
 
         }
     }
-
+    override fun onFrame() {
+        onDraw(GlCanvas.gl2,DrawMode.Preview)
+    }
 }

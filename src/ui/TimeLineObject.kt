@@ -19,6 +19,7 @@ import javafx.scene.layout.HBox
 import javafx.util.Duration
 import objects.MutableProperty
 import objects.SelectableProperty
+import util.Statics
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import kotlin.reflect.jvm.jvmErasure
@@ -164,6 +165,10 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
+                        slider.valueProperty().addListener({_,_,n->
+                            //TODO とりまキーフレーム無視
+                            v.keyFrames[0].value = n.toDouble()
+                        })
 
                         hbox.children.add(slider)
 
@@ -207,11 +212,16 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
 
     var editModeChangeListener: EditModeChangeListener? = null
 
-    fun onMove() {
+    fun onLayerChanged(old :Int ,new:Int){
+        cObject.layer = new
+    }
+
+    fun onMoved() {
         cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
         cObject.end = ((layoutX + width) / TimelineController.pixelPerFrame).toInt()
 
-
+        cObject.displayName = cObject.start.toString()
+        //println("${Statics.project.Layer[cObject.layer].indexOf(cObject)}/${Statics.project.Layer[cObject.layer].size-1}")
         cObject.onLayoutUpdate()
     }
 

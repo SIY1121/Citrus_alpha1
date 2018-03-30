@@ -6,19 +6,25 @@ import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.image.Image
+import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import objects.DrawableObject
+import javafx.stage.Screen.getPrimary
+
+
 
 class Main : Application() {
     @Throws(Exception::class)
     override fun start(primaryStage: Stage) {
 
-
         println("start")
+        val primScreenBounds = Screen.getPrimary().visualBounds
         val splash = Stage()
         splash.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource("splash.fxml")))
         splash.initStyle(StageStyle.UNDECORATED)
+        splash.x = (primScreenBounds.width - 600) / 2
+        splash.y = (primScreenBounds.height - 360) / 2
         splash.show()
         splash.toFront()
 
@@ -30,13 +36,12 @@ class Main : Application() {
             primaryStage.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
             println("scene")
             Platform.runLater {
-                primaryStage.scene = Scene(root, 500.0, 500.0)
+                primaryStage.scene = Scene(root, 800.0, 700.0)
                 primaryStage.show()
                 println("show")
                 splash.close()
             }
         }).start()
-
 
     }
 

@@ -40,6 +40,7 @@ class TimelineController : Initializable {
     @FXML
     lateinit var sceneChoiceBox: ChoiceBox<String>
 
+    lateinit var glCanvas: GlCanvas
 
     var layerCount = 0
     val layerHeight = 30.0
@@ -115,11 +116,12 @@ class TimelineController : Initializable {
         val menuShape = MenuItem("図形")
         val thisLayer = layerCount
         menuShape.setOnAction {
-            val o = TimeLineObject(Shape())
+            val cObject = Shape()
+            cObject.layer = thisLayer
+            val o = TimeLineObject(cObject)
             o.prefHeight = layerHeight*2
             o.style = "-fx-background-color:red"
             o.prefWidth = 200.0
-            o.cObject.layer = thisLayer
             o.setOnMousePressed {
                 selectedObjects.add(o)
                 selectedObjectOldWidth.add(o.width)
@@ -201,8 +203,10 @@ class TimelineController : Initializable {
         selectedOrigin = mouseEvent.x
         dragging = true
 
-        if(selectedObjects.isEmpty() && mouseEvent.button==MouseButton.PRIMARY)
+        if(selectedObjects.isEmpty() && mouseEvent.button==MouseButton.PRIMARY){
             caret.layoutX = mouseEvent.x
+            glCanvas.currentFrame =(caret.layoutX/ pixelPerFrame).toInt()
+        }
     }
 
     fun LayerScrollPane_onMouseDragged(mouseEvent: MouseEvent) {
@@ -216,9 +220,13 @@ class TimelineController : Initializable {
                         if (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] != o.parent) {
                             val src = (o.parent as Pane)
                             val dst = (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] as Pane)
+                            val srcIndex = o.cObject.layer
+                            val dstIndex = (mouseEvent.y / layerHeight).toInt()
+
                             src.children.remove(o)
-                            o.cObject.layer = (mouseEvent.y / layerHeight).toInt()
                             dst.children.add(o)
+
+                            o.onLayerChanged(srcIndex,dstIndex)
 
                             layerScrollPane.layout()
                         }
@@ -237,6 +245,7 @@ class TimelineController : Initializable {
             }
         else{
             caret.layoutX = mouseEvent.x
+            glCanvas.currentFrame =(caret.layoutX/ pixelPerFrame).toInt()
         }
 
     }
@@ -247,7 +256,14 @@ class TimelineController : Initializable {
         dragging = false
 
         for(o in selectedObjects)
-            o.onMove()
+            o.onMoved()
+
+        if(selectedObjects.isNotEmpty())
+        {
+            glCanvas.currentObjects.clear()
+            glCanvas.currentFrame = glCanvas.currentFrame
+            println("${glCanvas.currentObjects.size}")
+        }
 
         selectedObjects.clear()
         selectedObjectOldWidth.clear()
