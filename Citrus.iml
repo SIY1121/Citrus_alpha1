@@ -8,6 +8,9 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
-    <orderEntry type="library" name="OpenGL-jogl" level="project" />
+    <orderEntry type="library" name="OpenGL-jogl-all" level="project" />
+    <orderEntry type="library" name="json" level="project" />
+    <orderEntry type="library" name="ffmpeg" level="project" />
+    <orderEntry type="library" name="javacv" level="project" />
   </component>
 </module>

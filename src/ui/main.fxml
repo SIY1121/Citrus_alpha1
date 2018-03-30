@@ -1,23 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Line?>
-
 <Pane fx:id="rootPane" stylesheets="/ui/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
     <BorderPane fx:id="borderPane">
         <top>
@@ -34,11 +20,7 @@
         <center>
             <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
                 <Pane minHeight="150">
-                    <ImageView fitHeight="150.0" fitWidth="150.0" preserveRatio="true">
-                        <image>
-                            <Image url="@../assets/icon.png" />
-                        </image>
-                    </ImageView>
+                    <SwingNode fx:id="glCanvas"/>
                 </Pane>
                 <fx:include source="timeline.fxml" fx:id="timeline"/>
             </SplitPane>

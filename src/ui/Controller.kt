@@ -2,6 +2,7 @@ package ui
 
 import javafx.beans.InvalidationListener
 import javafx.beans.value.ObservableValue
+import javafx.embed.swing.SwingNode
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
@@ -18,13 +19,7 @@ import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
 
-class Controller :Initializable {
-    override fun initialize(location: URL?, resources: ResourceBundle?) {
-
-        borderPane.prefWidthProperty().bind(rootPane.widthProperty())
-        borderPane.prefHeightProperty().bind(rootPane.heightProperty())
-
-    }
+class Controller : Initializable {
 
     @FXML
     lateinit var borderPane: BorderPane
@@ -35,7 +30,21 @@ class Controller :Initializable {
     @FXML
     lateinit var splitPane: SplitPane
     @FXML
-    lateinit var timelineController : TimelineController
+    lateinit var timelineController: TimelineController
+    @FXML
+    lateinit var glCanvas: SwingNode
+
+    override fun initialize(location: URL?, resources: ResourceBundle?) {
+
+        println("initialize")
+
+        borderPane.prefWidthProperty().bind(rootPane.widthProperty())
+        borderPane.prefHeightProperty().bind(rootPane.heightProperty())
+
+        glCanvas.content = GlCanvas()
+        println("gl comp")
+
+    }
 
     fun onVersionInfo(actionEvent: ActionEvent) {
         Alert(Alert.AlertType.NONE, "Citrus alpha 0.0.1", ButtonType.OK).show()
