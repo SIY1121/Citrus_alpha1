@@ -8,34 +8,33 @@ import javafx.scene.control.*
 import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.VBox
 import objects.CitrusObject
 import annotation.CProperty
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
-import com.sun.javafx.scene.control.skin.TitledPaneSkin
-import javafx.collections.ObservableList
-import javafx.scene.layout.AnchorPane
-import javafx.scene.layout.HBox
-import javafx.util.Duration
+import interpolation.LinearInterpolation
+import javafx.scene.Node
+import javafx.scene.input.KeyCode
+import javafx.scene.layout.*
 import objects.MutableProperty
 import objects.SelectableProperty
 import util.Settings
-import util.Statics
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
-import kotlin.reflect.jvm.jvmErasure
 
 
 class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineController) : VBox(),
         CitrusObject.DisplayNameChangeListener {
 
     /**
+     * プロパティとUIを一括管理するためのクラス
+     */
+    data class PropertyData(val kProprety : KProperty1<CitrusObject,*>, var proprety : Any?, var node : Node?)
+
+    /**
      * セクション名とプロパティのリストを持つデータクラス
      * @param group グループ名
      * @param property 初期化するリスト
      */
-    data class PropertySection(val group: String, val property: MutableList<KProperty1<CitrusObject, *>> = ArrayList())
+    data class PropertySection(val group: String, val property: MutableList<PropertyData> = ArrayList())
 
     /**
      * 表示用ラベル
@@ -57,6 +56,7 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
      */
     val properties: MutableList<PropertySection> = ArrayList()
 
+    private var currentFrame = 0
 
     /**
      * カーソルの位置から
@@ -138,7 +138,7 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
                 //CPropertyアノテーションを持ったプロパティのみ登録
                 clazz.memberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                         .forEach { p ->
-                            section.property.add(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name })
+                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name },null,null))
                         }
                 properties.add(section)
             }
@@ -152,52 +152,64 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
                     "無題")
         cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                 .forEach {
-                    section.property.add(it)
+                    section.property.add(PropertyData(it,null,null))
                 }
         properties.add(section)
 
         //取得したプロパティからUIを生成
         for (p in properties) {
-            val vbox = VBox()
-            val accordion = TitledPane(p.group, vbox)
+            val grid = GridPane()
+            val accordion = TitledPane(p.group, grid)
+            grid.columnConstraints.add(ColumnConstraints())
+            grid.columnConstraints.add(ColumnConstraints())
+            grid.prefWidthProperty().bind(accordion.widthProperty())
             accordion.isAnimated = false
 
             //CPropertyアノテーションのindexに基づいてソート
-            p.property.sortWith(Comparator { o1, o2 -> (o1.annotations[0] as CProperty).index - (o2.annotations[0] as CProperty).index })
+            p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
 
-            for (pp in p.property) {
-                val name = (pp.annotations[0] as CProperty).displayName
-                val v = pp.get(cObject)
+            for ((i,pp) in p.property.withIndex()) {
+                val name = (pp.kProprety.annotations[0] as CProperty).displayName
+                val v = pp.kProprety.get(cObject)
+                pp.proprety = v
                 when (v) {
                     is MutableProperty -> {
-                        val hbox = HBox()
-                        hbox.children.add(Label(name))
+
+                        grid.add(Label(name),0,i)
                         val slider = Slider()
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
                         slider.valueProperty().addListener({ _, _, n ->
-                            //TODO とりまキーフレーム無視
-                            v.keyFrames[0].value = n.toDouble()
+                            //キーフレームがない場合
+                            if(v.keyFrames.size==1){
+                                v.keyFrames[0].value = n.toDouble()
+                            }
                         })
-
-                        hbox.children.add(slider)
-
-                        vbox.children.add(hbox)
+                        slider.setOnKeyPressed {
+                            if(it.code == KeyCode.I){
+                                println("added:${v.getKeyFrameIndex(currentFrame)+1},$currentFrame ,${slider.value}")
+                                v.keyFrames.add(v.getKeyFrameIndex(currentFrame)+1, MutableProperty.KeyFrame(currentFrame,LinearInterpolation(),slider.value))
+                                println(v.keyFrames.last().value)
+                            }
+                        }
+                        GridPane.setMargin(slider, Insets(5.0))
+                        grid.add(slider,1,i)
+                        pp.node = slider
                     }
                     is SelectableProperty -> {
-                        val hbox = HBox()
-                        hbox.children.add(Label(name))
+                        grid.add(Label(name),0,i)
                         val choice = ChoiceBox<String>()
                         choice.items.addAll(v.list)
                         choice.setOnAction { v.selectedIndex = choice.selectionModel.selectedIndex }
-                        hbox.children.add(choice)
+                        grid.add(choice,1,i)
 
-                        vbox.children.add(hbox)
+
                     }
                 }
 
             }
+            grid.columnConstraints[1].hgrow=Priority.ALWAYS
             popupRoot.children.add(accordion)
         }
 
@@ -235,6 +247,21 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
         cObject.end = ((layoutX + width) / TimelineController.pixelPerFrame).toInt()
         //println("${Statics.project.Layer[cObject.layer].indexOf(cObject)}/${Statics.project.Layer[cObject.layer].size-1}")
         cObject.onLayoutUpdate()
+    }
+
+    fun onCaretChanged(frame : Int){
+        currentFrame = frame - cObject.start
+        println((properties.first().property.first().proprety as MutableProperty).getKeyFrameIndex(currentFrame))
+        for(ps in properties)
+            for(p in ps.property)
+            {
+                val pro = p.proprety
+                when(pro){
+                    is MutableProperty->{
+                        (p.node as Slider).value = pro.value(currentFrame)
+                    }
+                }
+            }
     }
 
     fun onScaleChanged() {

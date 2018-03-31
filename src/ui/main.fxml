@@ -23,9 +23,7 @@
             </MenuBar>
         </top>
         <center>
-            <SplitPane dividerPositions="0.31097560975609756, 0.6890243902439024">
-
-                <Pane minWidth="150" />
+            <SplitPane>
 
                 <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
                     <AnchorPane fx:id="canvasWrapper">

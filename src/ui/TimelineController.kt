@@ -44,7 +44,7 @@ class TimelineController : Initializable {
 
     lateinit var glCanvas: GlCanvas
 
-    lateinit var parentController : Controller
+    lateinit var parentController: Controller
 
     var layerCount = 0
     val layerHeight = 30.0
@@ -60,7 +60,6 @@ class TimelineController : Initializable {
         get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
 
     var selectedObjects: MutableList<TimeLineObject> = ArrayList()
-    //var selectedObjectsOldX : MutableList<Double> = ArrayList()
     var selectedObjectOldWidth: MutableList<Double> = ArrayList()
     var dragging = false
     var selectedOffsetX = 0.0
@@ -69,7 +68,7 @@ class TimelineController : Initializable {
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
 
-        SplashController.notifyProgress(0.3,"UIを初期化中...")
+        SplashController.notifyProgress(0.3, "UIを初期化中...")
 
         labelScrollPane.vvalueProperty().bindBidirectional(layerScrollPane.vvalueProperty())
         timelineRootPane.widthProperty().addListener({ _, _, n ->
@@ -90,25 +89,24 @@ class TimelineController : Initializable {
 
         hScrollBar.minProperty().bind(layerScrollPane.hminProperty())
         hScrollBar.maxProperty().bind(layerScrollPane.hmaxProperty())
-        //hScrollBar.visibleAmountProperty().bind(layerScrollPane.widthProperty().divide(layerScrollPane.heightProperty()))
         layerScrollPane.hvalueProperty().bindBidirectional(hScrollBar.valueProperty())
 
         layerScrollPane.hvalueProperty().addListener({ _, _, n ->
             drawAxis()
         })
         layerScrollPane.setOnKeyPressed {
-            when(it.code){
-                KeyCode.SPACE->{
-                    if(!playing)play()
+            when (it.code) {
+                KeyCode.SPACE -> {
+                    if (!playing) play()
                     else stop()
                 }
-                KeyCode.RIGHT->{
+                KeyCode.RIGHT -> {
                     glCanvas.currentFrame++
-                    caret.layoutX =  glCanvas.currentFrame * pixelPerFrame
+                    caret.layoutX = glCanvas.currentFrame * pixelPerFrame
                 }
-                KeyCode.LEFT->{
+                KeyCode.LEFT -> {
                     glCanvas.currentFrame--
-                    caret.layoutX =  glCanvas.currentFrame * pixelPerFrame
+                    caret.layoutX = glCanvas.currentFrame * pixelPerFrame
                 }
             }
             it.consume()
@@ -121,6 +119,10 @@ class TimelineController : Initializable {
             generateLayer()
 
         hScrollBar.requestLayout()
+
+
+        caret.layoutXProperty().addListener({_,_,n->
+            glCanvas.currentFrame = (n.toDouble()/ pixelPerFrame).toInt()})
     }
 
     fun generateLayer() {
@@ -141,7 +143,7 @@ class TimelineController : Initializable {
         menuShape.setOnAction {
             val cObject = Shape()
             cObject.layer = thisLayer
-            val o = TimeLineObject(cObject,this)
+            val o = TimeLineObject(cObject, this)
             o.prefHeight = layerHeight * 2
             o.style = "-fx-background-color:red"
             o.prefWidth = 200.0
@@ -157,6 +159,9 @@ class TimelineController : Initializable {
                     }
                 }
             }
+            caret.layoutXProperty().addListener { _,_,_ ->
+                println("changed ${glCanvas.currentFrame}")
+                if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
 
             layerPane.children.add(o)
             layerScrollPane.layout()
@@ -228,7 +233,6 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
             caret.layoutX = mouseEvent.x
-            glCanvas.currentFrame = (caret.layoutX / pixelPerFrame).toInt()
         }
     }
 
@@ -268,7 +272,7 @@ class TimelineController : Initializable {
             }
         else {
             caret.layoutX = mouseEvent.x
-            glCanvas.currentFrame = (caret.layoutX / pixelPerFrame).toInt()
+
         }
 
     }
@@ -293,21 +297,21 @@ class TimelineController : Initializable {
 
 
     var playing = false
-    fun play(){
-        playing=true
+    fun play() {
+        playing = true
         val start = System.currentTimeMillis()
         val startFrame = glCanvas.currentFrame
         Thread({
-            while (playing){
-                glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start)/(1000.0/Statics.project.fps)).toInt()
-                Platform.runLater {caret.layoutX =  glCanvas.currentFrame * pixelPerFrame  }
+            while (playing) {
+                glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
+                Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
                 Thread.sleep(10)
             }
         }).start()
     }
 
-    fun stop(){
-        playing=false
+    fun stop() {
+        playing = false
     }
 
 }

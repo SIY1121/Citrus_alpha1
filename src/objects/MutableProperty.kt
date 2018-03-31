@@ -10,7 +10,7 @@ class MutableProperty {
     /**
      * キーフレームのデータクラス
      */
-    data class KeyFrame(var frame: Int, var interpolation: Interpolation, var value: Double)
+    data class KeyFrame(val frame: Int, var interpolation: Interpolation, var value: Double)
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
@@ -33,8 +33,13 @@ class MutableProperty {
             keyFrames[0].value
         else{
             val index = getKeyFrameIndex(frame)
-            val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
-            keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+            if(index == keyFrames.size-1)//最後のキーフレームの場合
+            {
+                keyFrames[index].value
+            }else{
+                val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
+                keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+            }
         }
 
     }
@@ -42,12 +47,14 @@ class MutableProperty {
     /**
      * 指定されたフレームが何番目のキーフレームの直後にあるかを算出
      */
-    private fun getKeyFrameIndex(frame: Int): Int {
+    fun getKeyFrameIndex(frame: Int): Int {
         for ((i, k) in keyFrames.withIndex()) {
             //初めてフレーム番号を越した場合、それが手前のキーフレームになる
-            if (k.frame <= frame)
-                return i
+            if (frame < k.frame){
+                println(i-1)
+                return i-1
+            }
         }
-        throw IndexOutOfBoundsException("指定されたフレームは範囲外です")
+        return keyFrames.size - 1
     }
 }
