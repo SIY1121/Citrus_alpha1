@@ -1,7 +1,7 @@
 package objects
 
-import interpolation.Interpolation
-import interpolation.LinearInterpolation
+import interpolation.Interpolator
+import interpolation.LinearInterpolator
 
 /**
  * キーフレームを持つプロパティ
@@ -10,7 +10,7 @@ class MutableProperty {
     /**
      * キーフレームのデータクラス
      */
-    data class KeyFrame(val frame: Int, var interpolation: Interpolation, var value: Double)
+    data class KeyFrame(val frame: Int, var interpolation: Interpolator, var value: Double)
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
@@ -19,28 +19,36 @@ class MutableProperty {
     var prefMin = -100.0
     var prefMax = 100.0
 
+    /**
+     * 値変更によるプレビュー表示用
+     */
+    var temporaryValue = 0.0
+    var temporaryMode = false
 
     init {
-        keyFrames.add(KeyFrame(0, LinearInterpolation(), 0.0))
-        //keyFrames.add(KeyFrame(Int.MAX_VALUE, LinearInterpolation(), 0.0))//TODO 最後のキーフレームを、オブジェクトの長さに追従させる
+        keyFrames.add(KeyFrame(0, LinearInterpolator(), 0.0))
     }
 
     /**
      * 指定されたフレーム時点での値を取得
      */
     fun value(frame: Int): Double {
-        return if(keyFrames.size==1)
-            keyFrames[0].value
-        else{
-            val index = getKeyFrameIndex(frame)
-            if(index == keyFrames.size-1)//最後のキーフレームの場合
-            {
-                keyFrames[index].value
-            }else{
-                val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
-                keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+        //値を変更している場合の一時的な表示用
+        return if (temporaryMode)
+            temporaryValue
+        else
+            if (keyFrames.size == 1)
+                keyFrames[0].value
+            else {
+                val index = getKeyFrameIndex(frame)
+                if (index == keyFrames.size - 1)//最後のキーフレームの場合
+                {
+                    keyFrames[index].value
+                } else {
+                    val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
+                    keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+                }
             }
-        }
 
     }
 
@@ -50,11 +58,22 @@ class MutableProperty {
     fun getKeyFrameIndex(frame: Int): Int {
         for ((i, k) in keyFrames.withIndex()) {
             //初めてフレーム番号を越した場合、それが手前のキーフレームになる
-            if (frame < k.frame){
-                println(i-1)
-                return i-1
+            if (frame < k.frame) {
+                //println(i - 1)
+                return i - 1
             }
         }
         return keyFrames.size - 1
+    }
+
+    /**
+     * 指定したフレームがキーフレームか判定
+     */
+    fun isKeyFrame(frame: Int) : Boolean{
+        for(k in keyFrames)
+            if(k.frame==frame)
+                return true
+
+        return false
     }
 }

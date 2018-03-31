@@ -10,9 +10,10 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import objects.CitrusObject
 import annotation.CProperty
+import interpolation.AccelerateDecelerateInterpolator
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
-import interpolation.LinearInterpolation
+import interpolation.LinearInterpolator
 import javafx.scene.Node
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
@@ -21,13 +22,13 @@ import objects.SelectableProperty
 import util.Settings
 
 
-class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineController) : VBox(),
+class TimeLineObject(var cObject: CitrusObject, val timelineController: TimelineController) : VBox(),
         CitrusObject.DisplayNameChangeListener {
 
     /**
      * プロパティとUIを一括管理するためのクラス
      */
-    data class PropertyData(val kProprety : KProperty1<CitrusObject,*>, var proprety : Any?, var node : Node?)
+    data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var proprety: Any?, var node: Node?)
 
     /**
      * セクション名とプロパティのリストを持つデータクラス
@@ -92,21 +93,21 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
      */
     private val mouseClicked = EventHandler<MouseEvent> {
         //ポップアップモード
-        if(Settings.popupEditWindow){
-            if(it.button == MouseButton.SECONDARY){
+        if (Settings.popupEditWindow) {
+            if (it.button == MouseButton.SECONDARY) {
                 popup.show(this, it.screenX, it.screenY)
 
-            }else{
+            } else {
                 popup.hide()
             }
             it.consume()
-        }else{
+        } else {
             //サイドバーモード
-            if(it.button == MouseButton.PRIMARY){
+            if (it.button == MouseButton.PRIMARY) {
                 timelineController.parentController.rightPane.children.clear()
                 timelineController.parentController.rightPane.children.add(popupRoot)
-                AnchorPane.setRightAnchor(popupRoot,0.0)
-                AnchorPane.setLeftAnchor(popupRoot,0.0)
+                AnchorPane.setRightAnchor(popupRoot, 0.0)
+                AnchorPane.setLeftAnchor(popupRoot, 0.0)
             }
         }
     }
@@ -138,7 +139,7 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
                 //CPropertyアノテーションを持ったプロパティのみ登録
                 clazz.memberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                         .forEach { p ->
-                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name },null,null))
+                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null))
                         }
                 properties.add(section)
             }
@@ -152,7 +153,7 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
                     "無題")
         cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                 .forEach {
-                    section.property.add(PropertyData(it,null,null))
+                    section.property.add(PropertyData(it, null, null))
                 }
         properties.add(section)
 
@@ -168,54 +169,58 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
             //CPropertyアノテーションのindexに基づいてソート
             p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
 
-            for ((i,pp) in p.property.withIndex()) {
+            for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations[0] as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
                 pp.proprety = v
                 when (v) {
                     is MutableProperty -> {
 
-                        grid.add(Label(name),0,i)
+                        grid.add(Label(name), 0, i)
                         val slider = Slider()
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
                         slider.valueProperty().addListener({ _, _, n ->
                             //キーフレームがない場合
-                            if(v.keyFrames.size==1){
+                            if (v.keyFrames.size == 1) {
                                 v.keyFrames[0].value = n.toDouble()
+                            } else {//キーフレームがある場合
+                                v.temporaryValue = n.toDouble()
+                                v.temporaryMode = true
                             }
                         })
                         slider.setOnKeyPressed {
-                            if(it.code == KeyCode.I){
-                                println("added:${v.getKeyFrameIndex(currentFrame)+1},$currentFrame ,${slider.value}")
-                                v.keyFrames.add(v.getKeyFrameIndex(currentFrame)+1, MutableProperty.KeyFrame(currentFrame,LinearInterpolation(),slider.value))
+                            if (it.code == KeyCode.I) {
+                                println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
+                                v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, MutableProperty.KeyFrame(currentFrame, AccelerateDecelerateInterpolator(), slider.value))
+                                slider.style = "-fx-base:#FFFF00"
                                 println(v.keyFrames.last().value)
                             }
                         }
                         GridPane.setMargin(slider, Insets(5.0))
-                        grid.add(slider,1,i)
+                        grid.add(slider, 1, i)
                         pp.node = slider
                     }
                     is SelectableProperty -> {
-                        grid.add(Label(name),0,i)
+                        grid.add(Label(name), 0, i)
                         val choice = ChoiceBox<String>()
                         choice.items.addAll(v.list)
                         choice.setOnAction { v.selectedIndex = choice.selectionModel.selectedIndex }
-                        grid.add(choice,1,i)
+                        grid.add(choice, 1, i)
 
 
                     }
                 }
 
             }
-            grid.columnConstraints[1].hgrow=Priority.ALWAYS
+            grid.columnConstraints[1].hgrow = Priority.ALWAYS
             popupRoot.children.add(accordion)
         }
 
 
 
-        if (Settings.popupEditWindow){
+        if (Settings.popupEditWindow) {
             val b = Button("OK")
             b.setOnAction { popup.hide() }
             popupRoot.children.add(b)
@@ -249,16 +254,23 @@ class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineC
         cObject.onLayoutUpdate()
     }
 
-    fun onCaretChanged(frame : Int){
+    fun onCaretChanged(frame: Int) {
         currentFrame = frame - cObject.start
-        println((properties.first().property.first().proprety as MutableProperty).getKeyFrameIndex(currentFrame))
-        for(ps in properties)
-            for(p in ps.property)
-            {
+        for (ps in properties)
+            for (p in ps.property) {
                 val pro = p.proprety
-                when(pro){
-                    is MutableProperty->{
+                when (pro) {
+                    is MutableProperty -> {
+                        //フレーム移動時にプレビュー用モードオフ
+                        pro.temporaryMode = false
                         (p.node as Slider).value = pro.value(currentFrame)
+
+
+                        (p.node as Slider).style = "-fx-base:" + when {
+                            pro.keyFrames.size == 1 -> "#323232"
+                            pro.isKeyFrame(currentFrame) -> "#FFFF00"
+                            else -> "#9B5A00"
+                        }
                     }
                 }
             }

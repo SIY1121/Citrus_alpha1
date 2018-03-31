@@ -160,7 +160,6 @@ class TimelineController : Initializable {
                 }
             }
             caret.layoutXProperty().addListener { _,_,_ ->
-                println("changed ${glCanvas.currentFrame}")
                 if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
 
             layerPane.children.add(o)
@@ -288,7 +287,7 @@ class TimelineController : Initializable {
         if (selectedObjects.isNotEmpty()) {
             glCanvas.currentObjects.clear()
             glCanvas.currentFrame = glCanvas.currentFrame
-            println("${glCanvas.currentObjects.size}")
+            //println("${glCanvas.currentObjects.size}")
         }
 
         selectedObjects.clear()
@@ -305,7 +304,7 @@ class TimelineController : Initializable {
             while (playing) {
                 glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
                 Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
-                Thread.sleep(10)
+                Thread.sleep(15)
             }
         }).start()
     }
