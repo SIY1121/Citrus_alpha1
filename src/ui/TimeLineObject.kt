@@ -13,10 +13,11 @@ import annotation.CProperty
 import interpolation.AccelerateDecelerateInterpolator
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
-import interpolation.LinearInterpolator
 import javafx.scene.Node
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
+import javafx.scene.paint.Paint
+import javafx.scene.shape.Circle
 import objects.MutableProperty
 import objects.SelectableProperty
 import util.Settings
@@ -27,8 +28,12 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     /**
      * プロパティとUIを一括管理するためのクラス
+     * @param kProprety リフレクションから取得したプロパティの生データ
+     * @param property MutableProperty等のそのまま参照できるプロパティ
+     * @param node スライダー等の値調整用UI
+     * @param pane タイムライン上でキーフレームを表示する親Pane
      */
-    data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var proprety: Any?, var node: Node?)
+    data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var property: Any?, var node: Node?,var pane:Pane?)
 
     /**
      * セクション名とプロパティのリストを持つデータクラス
@@ -118,6 +123,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         onMouseExited = mouseExited
         onMouseClicked = mouseClicked
         label.maxWidthProperty().bind(widthProperty())
+        label.minHeight = 30.0
         children.add(label)
 
         popupRoot = VBox()
@@ -139,7 +145,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 //CPropertyアノテーションを持ったプロパティのみ登録
                 clazz.memberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                         .forEach { p ->
-                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null))
+                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null,null))
                         }
                 properties.add(section)
             }
@@ -153,7 +159,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     "無題")
         cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
                 .forEach {
-                    section.property.add(PropertyData(it, null, null))
+                    section.property.add(PropertyData(it, null, null,null))
                 }
         properties.add(section)
 
@@ -172,7 +178,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations[0] as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
-                pp.proprety = v
+                pp.property = v
                 when (v) {
                     is MutableProperty -> {
 
@@ -190,12 +196,58 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                                 v.temporaryMode = true
                             }
                         })
+                        //キーフレーム追加用コード
                         slider.setOnKeyPressed {
                             if (it.code == KeyCode.I) {
                                 println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
-                                v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, MutableProperty.KeyFrame(currentFrame, AccelerateDecelerateInterpolator(), slider.value))
-                                slider.style = "-fx-base:#FFFF00"
-                                println(v.keyFrames.last().value)
+
+                                //TODO index0のキーフレームを操作した場合に挙動がおかしくなる
+                                if (v.keyFrames.size == 1)//はじめてのキーフレーム追加の場合
+                                {
+                                    val pane = Pane()
+                                    pane.minHeight = 10.0
+                                    pane.style = "-fx-background-color:yellow"
+                                    children.add(pane)//キーフレーム用のPaneを確保
+                                    pp.pane = pane
+                                }
+
+                                val keyFrameIndex = v.isKeyFrame(currentFrame)
+                                if(keyFrameIndex ==-1){
+                                    val keyFrame = MutableProperty.KeyFrame(currentFrame, AccelerateDecelerateInterpolator(), slider.value)
+                                    v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1,keyFrame )
+                                    val circle = Circle()
+                                    circle.layoutY = 5.0
+                                    circle.radius = 5.0
+                                    circle.fill = Paint.valueOf("BLUE")
+                                    circle.layoutX = TimelineController.pixelPerFrame * currentFrame
+                                    circle.setOnMouseEntered {
+                                        scene.cursor = Cursor.HAND
+                                        it.consume()
+                                    }
+                                    circle.setOnMouseExited {
+                                        scene.cursor = Cursor.DEFAULT
+                                        it.consume()
+                                    }
+
+                                    circle.setOnMouseDragged {
+                                        circle.layoutX = circle.localToParent(it.x,it.y).x
+                                        it.consume()
+                                    }
+                                    circle.setOnMouseReleased {
+                                        keyFrame.frame = (circle.layoutX / TimelineController.pixelPerFrame).toInt()
+                                        v.keyFrames.sortBy { it.frame }
+                                        it.consume()
+                                    }
+                                    circle.setOnMousePressed { it.consume() }//親に伝わってドラッグしないため
+                                    (children[i + 1] as Pane).children.add(circle)
+
+                                    slider.style = "-fx-base:#FFFF00"
+                                    println(v.keyFrames.last().value)
+                                }else{
+                                    v.keyFrames[keyFrameIndex].value = slider.value
+                                }
+
+
                             }
                         }
                         GridPane.setMargin(slider, Insets(5.0))
@@ -258,7 +310,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         currentFrame = frame - cObject.start
         for (ps in properties)
             for (p in ps.property) {
-                val pro = p.proprety
+                val pro = p.property
                 when (pro) {
                     is MutableProperty -> {
                         //フレーム移動時にプレビュー用モードオフ
@@ -268,7 +320,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                         (p.node as Slider).style = "-fx-base:" + when {
                             pro.keyFrames.size == 1 -> "#323232"
-                            pro.isKeyFrame(currentFrame) -> "#FFFF00"
+                            pro.isKeyFrame(currentFrame)!=-1 -> "#FFFF00"
                             else -> "#9B5A00"
                         }
                     }
@@ -279,6 +331,18 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
     fun onScaleChanged() {
         layoutX = cObject.start * TimelineController.pixelPerFrame
         prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
+
+        for(ps in properties)
+            for(p in ps.property){
+                val pro = p.property
+                val pane = p.pane
+                if(pane!=null && pro is MutableProperty){
+                    for((i,v) in pane.children.withIndex()){
+                        v.layoutX = pro.keyFrames[i + 1].frame * TimelineController.pixelPerFrame
+                    }
+                }
+            }
+
     }
 
 }

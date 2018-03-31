@@ -10,7 +10,7 @@ class MutableProperty {
     /**
      * キーフレームのデータクラス
      */
-    data class KeyFrame(val frame: Int, var interpolation: Interpolator, var value: Double)
+    data class KeyFrame(var frame: Int, var interpolation: Interpolator, var value: Double)
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
@@ -68,12 +68,14 @@ class MutableProperty {
 
     /**
      * 指定したフレームがキーフレームか判定
+     * キーフレームの場合は何番目のキーフレームかを返す
+     * それ以外は-1
      */
-    fun isKeyFrame(frame: Int) : Boolean{
-        for(k in keyFrames)
+    fun isKeyFrame(frame: Int) : Int{
+        for((i,k) in keyFrames.withIndex())
             if(k.frame==frame)
-                return true
+                return i
 
-        return false
+        return -1
     }
 }
