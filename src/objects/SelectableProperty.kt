@@ -10,4 +10,12 @@ import com.sun.xml.internal.fastinfoset.util.StringArray
  */
 class SelectableProperty(val list : List<String>) {
     var selectedIndex = 0
+        set(value){
+            field=value
+            listener?.onChanged(field)
+        }
+    interface ChangeListener{
+        fun onChanged(index : Int)
+    }
+    var listener:ChangeListener? = null
 }

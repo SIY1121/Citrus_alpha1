@@ -20,6 +20,11 @@ class Shape : DrawableObject() {
 
     init{
         displayName = "図形"
+        selectableProperty.listener = object : SelectableProperty.ChangeListener{
+            override fun onChanged(index: Int) {
+                displayName = "図形 ${selectableProperty.list[index]}"
+            }
+        }
     }
 
     override fun onDraw(gl: GL2, mode: DrawMode) {
@@ -58,6 +63,5 @@ class Shape : DrawableObject() {
 
     override fun onLayoutUpdate() {
         super.onLayoutUpdate()
-        //displayName = "${selectableProperty.selectedIndex.toType()}"
     }
 }

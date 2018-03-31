@@ -23,15 +23,20 @@
             </MenuBar>
         </top>
         <center>
-            <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
-                <AnchorPane fx:id="canvasWrapper">
-                    <SwingNode fx:id="glCanvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"/>
-                </AnchorPane>
-                <fx:include fx:id="timeline" source="timeline.fxml" />
+            <SplitPane dividerPositions="0.31097560975609756, 0.6890243902439024">
+
+                <Pane minWidth="150" />
+
+                <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
+                    <AnchorPane fx:id="canvasWrapper">
+                        <SwingNode fx:id="glCanvas" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
+                    </AnchorPane>
+                    <fx:include fx:id="timeline" source="timeline.fxml" />
+                </SplitPane>
+
+                <AnchorPane fx:id="rightPane" minWidth="150" />
             </SplitPane>
         </center>
-        <bottom>
 
-        </bottom>
     </BorderPane>
 </Pane>

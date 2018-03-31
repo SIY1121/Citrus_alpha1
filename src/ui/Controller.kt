@@ -36,6 +36,8 @@ class Controller : Initializable {
     lateinit var glCanvas: SwingNode
     @FXML
     lateinit var canvasWrapper : Pane
+    @FXML
+    lateinit var rightPane : AnchorPane
 
 
     lateinit var canvas : GlCanvas
@@ -43,6 +45,7 @@ class Controller : Initializable {
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
         canvas = GlCanvas()
+        timelineController.parentController = this
         timelineController.glCanvas = canvas
 
         borderPane.prefWidthProperty().bind(rootPane.widthProperty())
@@ -50,8 +53,9 @@ class Controller : Initializable {
         canvasWrapper.heightProperty().addListener(listener)
         canvasWrapper.widthProperty().addListener(listener)
 
+        SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
+
         glCanvas.content = canvas
-        println("gl comp")
 
     }
 

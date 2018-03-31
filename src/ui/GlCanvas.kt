@@ -44,6 +44,7 @@ class GlCanvas : GLJPanel(), GLEventListener {
 
     init {
         addGLEventListener(this)
+
     }
 
     override fun init(p0: GLAutoDrawable) {

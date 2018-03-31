@@ -18,7 +18,6 @@ class Main : Application() {
     @Throws(Exception::class)
     override fun start(primaryStage: Stage) {
 
-        println("start")
         val primScreenBounds = Screen.getPrimary().visualBounds
         val splash = Stage()
         splash.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource("splash.fxml")))
@@ -30,15 +29,16 @@ class Main : Application() {
 
 
         Thread({
-            println("loadmain")
+            SplashController.notifyProgress(0.1,"読み込み中...")
+
             val root = FXMLLoader.load<Parent>(javaClass.getResource("main.fxml"))
             primaryStage.title = "Citrus"
             primaryStage.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
-            println("scene")
+
             Platform.runLater {
                 primaryStage.scene = Scene(root, 800.0, 700.0)
                 primaryStage.show()
-                println("show")
+                SplashController.notifyProgress(1.0,"完了")
                 splash.close()
             }
         }).start()

@@ -15,17 +15,19 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import com.sun.javafx.scene.control.skin.TitledPaneSkin
 import javafx.collections.ObservableList
+import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.HBox
 import javafx.util.Duration
 import objects.MutableProperty
 import objects.SelectableProperty
+import util.Settings
 import util.Statics
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import kotlin.reflect.jvm.jvmErasure
 
 
-class TimeLineObject(var cObject: CitrusObject) : VBox(),
+class TimeLineObject(var cObject: CitrusObject,val timelineController: TimelineController) : VBox(),
         CitrusObject.DisplayNameChangeListener {
 
     /**
@@ -48,7 +50,7 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
     /**
      * ポップアップウィンドウのルート要素
      */
-    var popupRoot: VBox
+    lateinit var popupRoot: VBox
 
     /**
      * セクションのリスト
@@ -86,17 +88,26 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
     }
 
     /**
-     * ポップアップウィンドウ表示
+     * クリック時の動作
      */
     private val mouseClicked = EventHandler<MouseEvent> {
-        if (it.button == MouseButton.SECONDARY) {
+        //ポップアップモード
+        if(Settings.popupEditWindow){
+            if(it.button == MouseButton.SECONDARY){
+                popup.show(this, it.screenX, it.screenY)
 
-            popup.show(this, it.screenX, it.screenY)
+            }else{
+                popup.hide()
+            }
             it.consume()
-            println("hi")
-
-        } else {
-            popup.hide()
+        }else{
+            //サイドバーモード
+            if(it.button == MouseButton.PRIMARY){
+                timelineController.parentController.rightPane.children.clear()
+                timelineController.parentController.rightPane.children.add(popupRoot)
+                AnchorPane.setRightAnchor(popupRoot,0.0)
+                AnchorPane.setLeftAnchor(popupRoot,0.0)
+            }
         }
     }
 
@@ -157,15 +168,15 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
             for (pp in p.property) {
                 val name = (pp.annotations[0] as CProperty).displayName
                 val v = pp.get(cObject)
-                when(v){
-                    is MutableProperty->{
+                when (v) {
+                    is MutableProperty -> {
                         val hbox = HBox()
                         hbox.children.add(Label(name))
                         val slider = Slider()
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
-                        slider.valueProperty().addListener({_,_,n->
+                        slider.valueProperty().addListener({ _, _, n ->
                             //TODO とりまキーフレーム無視
                             v.keyFrames[0].value = n.toDouble()
                         })
@@ -174,7 +185,7 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
 
                         vbox.children.add(hbox)
                     }
-                    is SelectableProperty->{
+                    is SelectableProperty -> {
                         val hbox = HBox()
                         hbox.children.add(Label(name))
                         val choice = ChoiceBox<String>()
@@ -190,12 +201,15 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
             popupRoot.children.add(accordion)
         }
 
-        val b = Button("OK")
-        b.setOnAction { popup.hide() }
-        popupRoot.children.add(b)
 
 
-        popup.scene.root = popupRoot
+        if (Settings.popupEditWindow){
+            val b = Button("OK")
+            b.setOnAction { popup.hide() }
+            popupRoot.children.add(b)
+            popup.scene.root = popupRoot
+        }
+
     }
 
     override fun onDisplayNameChanged(name: String) {
@@ -212,15 +226,13 @@ class TimeLineObject(var cObject: CitrusObject) : VBox(),
 
     var editModeChangeListener: EditModeChangeListener? = null
 
-    fun onLayerChanged(old :Int ,new:Int){
+    fun onLayerChanged(old: Int, new: Int) {
         cObject.layer = new
     }
 
     fun onMoved() {
         cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
         cObject.end = ((layoutX + width) / TimelineController.pixelPerFrame).toInt()
-
-        cObject.displayName = cObject.start.toString()
         //println("${Statics.project.Layer[cObject.layer].indexOf(cObject)}/${Statics.project.Layer[cObject.layer].size-1}")
         cObject.onLayoutUpdate()
     }
