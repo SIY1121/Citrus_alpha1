@@ -11,6 +11,7 @@ import javafx.scene.input.MouseEvent
 import objects.CitrusObject
 import annotation.CProperty
 import interpolation.AccelerateDecelerateInterpolator
+import interpolation.BounceInterpolator
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.Node
@@ -189,8 +190,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         slider.value = v.value(1)
                         slider.valueProperty().addListener({ _, _, n ->
                             //キーフレームがない場合
-                            if (v.keyFrames.size == 1) {
-                                v.keyFrames[0].value = n.toDouble()
+                            if (v.keyFrames.size==0) {
+                                v.fixedValue = n.toDouble()
                             } else {//キーフレームがある場合
                                 v.temporaryValue = n.toDouble()
                                 v.temporaryMode = true
@@ -201,8 +202,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                             if (it.code == KeyCode.I) {
                                 println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
 
-                                //TODO index0のキーフレームを操作した場合に挙動がおかしくなる
-                                if (v.keyFrames.size == 1)//はじめてのキーフレーム追加の場合
+                                if (v.keyFrames.size==0)//はじめてのキーフレーム追加の場合
                                 {
                                     val pane = Pane()
                                     pane.minHeight = 10.0
@@ -213,7 +213,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                                 val keyFrameIndex = v.isKeyFrame(currentFrame)
                                 if(keyFrameIndex ==-1){
-                                    val keyFrame = MutableProperty.KeyFrame(currentFrame, AccelerateDecelerateInterpolator(), slider.value)
+                                    val keyFrame = MutableProperty.KeyFrame(currentFrame, BounceInterpolator(), slider.value)
                                     v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1,keyFrame )
                                     val circle = Circle()
                                     circle.layoutY = 5.0
@@ -317,9 +317,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         pro.temporaryMode = false
                         (p.node as Slider).value = pro.value(currentFrame)
 
-
                         (p.node as Slider).style = "-fx-base:" + when {
-                            pro.keyFrames.size == 1 -> "#323232"
+                            pro.keyFrames.size == 0 -> "#323232"
                             pro.isKeyFrame(currentFrame)!=-1 -> "#FFFF00"
                             else -> "#9B5A00"
                         }
@@ -338,7 +337,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 val pane = p.pane
                 if(pane!=null && pro is MutableProperty){
                     for((i,v) in pane.children.withIndex()){
-                        v.layoutX = pro.keyFrames[i + 1].frame * TimelineController.pixelPerFrame
+                        v.layoutX = pro.keyFrames[i].frame * TimelineController.pixelPerFrame
                     }
                 }
             }

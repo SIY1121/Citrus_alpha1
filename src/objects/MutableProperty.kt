@@ -20,21 +20,27 @@ class MutableProperty {
     var prefMax = 100.0
 
     /**
+     * キーフレームが無い時用の値
+     */
+    var fixedValue = 0.0
+
+    /**
      * 値変更によるプレビュー表示用
      */
     var temporaryValue = 0.0
     var temporaryMode = false
 
     init {
-        keyFrames.add(KeyFrame(0, LinearInterpolator(), 0.0))
     }
 
     /**
      * 指定されたフレーム時点での値を取得
      */
     fun value(frame: Int): Double {
+        return if(keyFrames.size==0)
+            fixedValue
+        else if (temporaryMode)
         //値を変更している場合の一時的な表示用
-        return if (temporaryMode)
             temporaryValue
         else
             if (keyFrames.size == 1)
