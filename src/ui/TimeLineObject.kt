@@ -12,6 +12,8 @@ import objects.CitrusObject
 import annotation.CProperty
 import interpolation.AccelerateDecelerateInterpolator
 import interpolation.BounceInterpolator
+import interpolation.Interpolator
+import interpolation.InterpolatorManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.Node
@@ -220,10 +222,13 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                                     circle.radius = 5.0
                                     circle.fill = Paint.valueOf("BLUE")
                                     circle.layoutX = TimelineController.pixelPerFrame * currentFrame
+
                                     circle.setOnMouseEntered {
+
                                         scene.cursor = Cursor.HAND
                                         it.consume()
                                     }
+                                    circle.setOnMouseMoved { it.consume() }
                                     circle.setOnMouseExited {
                                         scene.cursor = Cursor.DEFAULT
                                         it.consume()
@@ -238,7 +243,30 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                                         v.keyFrames.sortBy { it.frame }
                                         it.consume()
                                     }
-                                    circle.setOnMousePressed { it.consume() }//親に伝わってドラッグしないため
+                                    circle.setOnMousePressed {
+                                        //押されたキーフレームに移動
+                                        timelineController.glCanvas.currentFrame = keyFrame.frame + cObject.start
+                                        timelineController.caret.layoutX = timelineController.glCanvas.currentFrame * TimelineController.pixelPerFrame
+                                        it.consume()
+                                    }
+
+                                    val contextMenu = ContextMenu()
+                                    for(i in InterpolatorManager.interpolator){
+                                        val menu = MenuItem(i.key)
+                                        menu.setOnAction {
+                                            keyFrame.interpolation = (i.value.newInstance() as Interpolator)
+                                        }
+                                        contextMenu.items.add(menu)
+                                    }
+                                    circle.setOnMouseClicked {
+                                        if(it.button==MouseButton.SECONDARY){
+                                            contextMenu.show(circle,it.screenX,it.screenY)
+                                            it.consume()
+                                        }
+                                    }
+
+
+
                                     (children[i + 1] as Pane).children.add(circle)
 
                                     slider.style = "-fx-base:#FFFF00"

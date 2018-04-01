@@ -20,3 +20,6 @@ annotation class CProperty(val displayName : String,val index : Int)
  */
 @Target(AnnotationTarget.CLASS)
 annotation class CObject(val name:String)
+
+@Target(AnnotationTarget.CLASS)
+annotation class CInterpolation(val name : String)

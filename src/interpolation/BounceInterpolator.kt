@@ -1,6 +1,9 @@
 package interpolation
 
-class BounceInterpolator : Interpolator() {
+import annotation.CInterpolation
+
+@CInterpolation("バウンス")
+class BounceInterpolator : Interpolator{
     override fun getInterpolation(input: Double): Double {
         return when {
             input < 0.3535 -> bounce(input)
