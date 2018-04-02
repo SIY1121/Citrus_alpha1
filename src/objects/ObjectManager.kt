@@ -1,13 +1,9 @@
 package objects
 
-import annotation.CInterpolation
 import annotation.CObject
-import interpolation.Interpolator
-import interpolation.InterpolatorManager
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
-import kotlin.reflect.full.superclasses
 
 class ObjectManager {
     companion object {

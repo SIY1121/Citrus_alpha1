@@ -15,6 +15,10 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
+import org.bytedeco.javacpp.avcodec
+import org.bytedeco.javacpp.avformat
+import org.bytedeco.javacv.FFmpegFrameGrabber
 import util.Statics
 import java.net.URL
 import java.util.*
@@ -66,6 +70,24 @@ class Controller : Initializable {
     }
 
     fun onVersionInfo(actionEvent: ActionEvent) {
-        Alert(Alert.AlertType.NONE, "Citrus alpha 0.0.1", ButtonType.OK).show()
+
+        Alert(Alert.AlertType.NONE, "Citrus alpha 0.1.0", ButtonType.OK).show()
+    }
+
+    fun onCodecInfo(actionEvent: ActionEvent) {
+        avcodec.avcodec_register_all()
+        var codec = avcodec.av_codec_next(null)
+        while (codec!=null)
+        {
+            println(codec.long_name().getString("ASCII"))
+            codec = avcodec.av_codec_next(codec)
+        }
+        avformat.av_register_all()
+        println("--format--")
+        var format = avformat.av_oformat_next(null)
+        while (format!=null){
+            println(format.long_name().getString("ASCII"))
+            format = avformat.av_oformat_next(format)
+        }
     }
 }

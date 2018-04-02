@@ -1,9 +1,9 @@
 package objects
 
 import annotation.CObject
-import com.jogamp.opengl.GL
 import annotation.CProperty
 import com.jogamp.opengl.GL2
+import properties.SelectableProperty
 
 @CObject("図形")
 class Shape : DrawableObject() {
@@ -15,7 +15,7 @@ class Shape : DrawableObject() {
     override val name = "図形"
 
     @CProperty("種類",0)
-    val selectableProperty = SelectableProperty(listOf("三角形","四角形","円"))
+    val selectableProperty = SelectableProperty(listOf("三角形", "四角形", "円"))
 
 
     init{

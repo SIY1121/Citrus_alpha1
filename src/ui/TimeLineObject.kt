@@ -8,9 +8,7 @@ import javafx.scene.control.*
 import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
-import objects.CitrusObject
 import annotation.CProperty
-import interpolation.AccelerateDecelerateInterpolator
 import interpolation.BounceInterpolator
 import interpolation.Interpolator
 import interpolation.InterpolatorManager
@@ -22,9 +20,11 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Paint
 import javafx.scene.shape.Circle
 import javafx.stage.FileChooser
-import objects.FileProperty
-import objects.MutableProperty
-import objects.SelectableProperty
+import objects.*
+import properties.FileProperty
+import properties.MutableProperty
+import properties.SelectableProperty
+import properties.SwitchableProperty
 import util.Settings
 
 
@@ -140,7 +140,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         //cObjectの親クラスをたどり、それぞれのプロパティを取得
         cObject.javaClass.kotlin.allSuperclasses.reversed().forEach { clazz ->
             //これらのクラスは除外
-            if (clazz != Any::class && clazz != CitrusObject::class) {
+            if (clazz != Any::class && clazz != CitrusObject::class ) {
                 val section = PropertySection(
                         if (clazz.annotations.isNotEmpty() && clazz.annotations[0] is CObject)
                             (clazz.annotations[0] as CObject).name
@@ -175,6 +175,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             grid.columnConstraints.add(ColumnConstraints())
             grid.columnConstraints.add(ColumnConstraints())
             grid.prefWidthProperty().bind(accordion.widthProperty())
+            grid.hgap = 10.0
+            grid.vgap = 10.0
             accordion.isAnimated = false
 
             //CPropertyアノテーションのindexに基づいてソート
@@ -280,7 +282,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                             }
                         }
-                        GridPane.setMargin(slider, Insets(5.0))
+                        //GridPane.setMargin(slider, Insets(5.0))
                         grid.add(slider, 1, i)
                         pp.node = slider
                     }
@@ -304,6 +306,16 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         grid.add(button,1,i)
 
                     }
+                    is SwitchableProperty ->{
+                        grid.add(Label(name), 0, i)
+                        val checkBox = CheckBox("")
+                        checkBox.isSelected = v.value
+                        checkBox.setOnAction {
+                            v.value = checkBox.isSelected
+                        }
+                        grid.add(checkBox,1,i)
+                    }
+
                 }
 
             }

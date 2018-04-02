@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
+import objects.CitrusObject
 import objects.DrawableObject
 import objects.ObjectManager
 import objects.Shape
@@ -145,7 +146,7 @@ class TimelineController : Initializable {
             val menuShape = MenuItem(obj.key)
             val thisLayer = layerCount
             menuShape.setOnAction {
-                val cObject = (obj.value.newInstance() as DrawableObject)
+                val cObject = (obj.value.newInstance() as CitrusObject)
                 cObject.layer = thisLayer
                 val o = TimeLineObject(cObject, this)
                 o.prefHeight = layerHeight * 2

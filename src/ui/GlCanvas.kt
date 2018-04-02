@@ -33,7 +33,7 @@ class GlCanvas : GLJPanel(), GLEventListener {
         }
 
 
-    val animator = FPSAnimator(60)
+    val animator = FPSAnimator(Statics.project.fps)
 
     companion object {
         lateinit var instance : GlCanvas

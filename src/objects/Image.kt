@@ -7,11 +7,12 @@ import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
 import javafx.stage.FileChooser
+import properties.FileProperty
 import ui.GlCanvas
 import java.io.File
 
 @CObject("画像")
-class Image : DrawableObject(),FileProperty.ChangeListener {
+class Image : DrawableObject(), FileProperty.ChangeListener {
 
 
     override val id = "citrus/image"
@@ -19,8 +20,8 @@ class Image : DrawableObject(),FileProperty.ChangeListener {
 
     @CProperty("ファイル",0)
     val file = FileProperty(listOf(
-            FileChooser.ExtensionFilter("PNG","*.png"),
-            FileChooser.ExtensionFilter("JPG","*.jpg")
+            FileChooser.ExtensionFilter("PNG", "*.png"),
+            FileChooser.ExtensionFilter("JPG", "*.jpg")
     ))
 
     var texture :Texture? = null

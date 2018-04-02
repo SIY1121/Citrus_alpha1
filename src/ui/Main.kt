@@ -41,6 +41,9 @@ class Main : Application() {
             val root = FXMLLoader.load<Parent>(javaClass.getResource("main.fxml"))
             primaryStage.title = "Citrus"
             primaryStage.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
+            primaryStage.setOnCloseRequest {
+                System.exit(0)
+            }
 
             Platform.runLater {
                 primaryStage.scene = Scene(root, 800.0, 700.0)

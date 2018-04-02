@@ -1,9 +1,9 @@
 package objects
 
 import annotation.CObject
-import com.jogamp.opengl.GL
 import annotation.CProperty
 import com.jogamp.opengl.GL2
+import properties.MutableProperty
 import ui.GlCanvas
 
 /**
@@ -30,7 +30,7 @@ abstract class DrawableObject:CitrusObject() {
     val z = MutableProperty()
 
     @CProperty("拡大率",3)
-    val scale = MutableProperty(0.0,10.0,def = 1.0)
+    val scale = MutableProperty(0.0, 10.0, def = 1.0)
     @CProperty("透明度",4)
     val alpha = MutableProperty()
     @CProperty("回転",5)

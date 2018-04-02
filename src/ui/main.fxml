@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.embed.swing.SwingNode?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.shape.Circle?>
-
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <Pane fx:id="rootPane" stylesheets="/ui/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
     <BorderPane fx:id="borderPane">
         <top>
@@ -19,12 +12,13 @@
                 </Menu>
                 <Menu text="編集" />
                 <Menu text="ヘルプ">
+                    <MenuItem onAction="#onCodecInfo" text="コーデック情報"/>
                     <MenuItem onAction="#onVersionInfo" text="バージョン情報" />
                 </Menu>
             </MenuBar>
         </top>
         <center>
-            <SplitPane dividerPositions="0.5">
+            <SplitPane dividerPositions="0.8">
 
                 <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
                     <AnchorPane fx:id="canvasWrapper">
