@@ -21,6 +21,8 @@ import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.scene.paint.Paint
 import javafx.scene.shape.Circle
+import javafx.stage.FileChooser
+import objects.FileProperty
 import objects.MutableProperty
 import objects.SelectableProperty
 import util.Settings
@@ -288,7 +290,18 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         choice.items.addAll(v.list)
                         choice.setOnAction { v.selectedIndex = choice.selectionModel.selectedIndex }
                         grid.add(choice, 1, i)
+                    }
 
+                    is FileProperty ->{
+                        grid.add(Label(name), 0, i)
+                        val button = Button("ファイルを選択")
+                        button.setOnAction {
+                            val chooser = FileChooser()
+                            chooser.title = "ファイルを選択"
+                            chooser.extensionFilters.addAll(v.filters)
+                            v.file =  chooser.showOpenDialog(this.scene.window).path
+                        }
+                        grid.add(button,1,i)
 
                     }
                 }

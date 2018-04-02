@@ -36,6 +36,7 @@ class GlCanvas : GLJPanel(), GLEventListener {
     val animator = FPSAnimator(60)
 
     companion object {
+        lateinit var instance : GlCanvas
         lateinit var gl2: GL2
         val glu = GLU()
     }
@@ -43,33 +44,38 @@ class GlCanvas : GLJPanel(), GLEventListener {
     val currentObjects: HashMap<Int, CitrusObject> = HashMap()
 
     init {
+        instance = this
         addGLEventListener(this)
-
     }
 
     override fun init(p0: GLAutoDrawable) {
+        println("init")
         gl2 = p0.gl.gL2
+
         gl2.glClearColor(1f, 0f, 0f, 1f)
-        gl2.glMatrixMode(GL2.GL_PROJECTION)
-        gl2.glLoadIdentity()
-        //gl2.glOrtho(-Statics.project.width/2.0,Statics.project.width/2.0,-Statics.project.height/2.0,Statics.project.height/2.0,0.1,100.0)
-        glu.gluPerspective(90.0, Statics.project.width.toDouble() / Statics.project.height, 1.0, Statics.project.width.toDouble())
-        glu.gluLookAt(0.0, 0.0, Statics.project.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
         animator.add(p0)
         animator.start()
     }
 
     override fun reshape(p0: GLAutoDrawable?, p1: Int, p2: Int, p3: Int, p4: Int) {
-
+        gl2.glMatrixMode(GL2.GL_PROJECTION)
+        gl2.glLoadIdentity()
+        //gl2.glOrtho(-Statics.project.width/2.0,Statics.project.width/2.0,-Statics.project.height/2.0,Statics.project.height/2.0,0.1,100.0)
+        glu.gluPerspective(90.0, Statics.project.width.toDouble() / Statics.project.height, 1.0, Statics.project.width.toDouble())
+        glu.gluLookAt(0.0, 0.0, Statics.project.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     }
 
     override fun display(p0: GLAutoDrawable?) {
+
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
+        gl2.glMatrixMode(GL2.GL_MODELVIEW)
+        gl2.glLoadIdentity()
         //println(currentObjects.size)
         for (o in currentObjects)
             o.value.onSuperFrame(currentFrame)
 
+        
     }
 
     override fun dispose(p0: GLAutoDrawable?) {

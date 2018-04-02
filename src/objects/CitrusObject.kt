@@ -1,5 +1,6 @@
 package objects
 
+import effects.Effect
 import util.Statics
 
 /**
@@ -18,6 +19,8 @@ abstract class CitrusObject{
 
     var frame:Int = 0
         private set
+
+    val effects : MutableList<Effect> = ArrayList()
 
     interface DisplayNameChangeListener {
         fun onDisplayNameChanged(name: String)

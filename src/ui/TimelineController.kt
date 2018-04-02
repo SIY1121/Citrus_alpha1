@@ -14,6 +14,8 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
+import objects.DrawableObject
+import objects.ObjectManager
 import objects.Shape
 import util.Statics
 import java.net.URL
@@ -138,38 +140,43 @@ class TimelineController : Initializable {
         val menu = ContextMenu()
         val menuObject = Menu("オブジェクトの追加")
         menu.items.add(menuObject)
-        val menuShape = MenuItem("図形")
-        val thisLayer = layerCount
-        menuShape.setOnAction {
-            val cObject = Shape()
-            cObject.layer = thisLayer
-            val o = TimeLineObject(cObject, this)
-            o.prefHeight = layerHeight * 2
-            o.style = "-fx-background-color:red"
-            o.prefWidth = 200.0
-            o.setOnMousePressed {
-                selectedObjects.add(o)
-                selectedObjectOldWidth.add(o.width)
-            }
-            o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
-                override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
-                    if (!dragging) {
-                        editMode = mode
-                        selectedOffsetX = offsetX
+
+        for(obj in ObjectManager.list){
+            val menuShape = MenuItem(obj.key)
+            val thisLayer = layerCount
+            menuShape.setOnAction {
+                val cObject = (obj.value.newInstance() as DrawableObject)
+                cObject.layer = thisLayer
+                val o = TimeLineObject(cObject, this)
+                o.prefHeight = layerHeight * 2
+                o.style = "-fx-background-color:red"
+                o.prefWidth = 200.0
+                o.setOnMousePressed {
+                    selectedObjects.add(o)
+                    selectedObjectOldWidth.add(o.width)
+                }
+                o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
+                    override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
+                        if (!dragging) {
+                            editMode = mode
+                            selectedOffsetX = offsetX
+                        }
                     }
                 }
-            }
-            caret.layoutXProperty().addListener { _,_,_ ->
-                if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
+                caret.layoutXProperty().addListener { _,_,_ ->
+                    if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
 
-            layerPane.children.add(o)
-            layerScrollPane.layout()
+                layerPane.children.add(o)
+                layerScrollPane.layout()
+            }
+            menuObject.items.add(menuShape)
+            layerPane.setOnMouseClicked {
+                if (it.button == MouseButton.SECONDARY)
+                    menu.show(layerPane, it.screenX, it.screenY)
+            }
         }
-        menuObject.items.add(menuShape)
-        layerPane.setOnMouseClicked {
-            if (it.button == MouseButton.SECONDARY)
-                menu.show(layerPane, it.screenX, it.screenY)
-        }
+
+
 
         //label.minHeightProperty().bind(pane.heightProperty())
         //pane.heightProperty().addListener({_,_,n->println(n)})

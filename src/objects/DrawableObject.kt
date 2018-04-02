@@ -30,7 +30,7 @@ abstract class DrawableObject:CitrusObject() {
     val z = MutableProperty()
 
     @CProperty("拡大率",3)
-    val scale = MutableProperty()
+    val scale = MutableProperty(0.0,10.0,def = 1.0)
     @CProperty("透明度",4)
     val alpha = MutableProperty()
     @CProperty("回転",5)
@@ -38,11 +38,16 @@ abstract class DrawableObject:CitrusObject() {
 
 
     open fun onDraw(gl: GL2, mode : DrawMode){
+        gl.glTranslated(x.value(frame),y.value(frame),z.value(frame))
+        gl.glRotated(rotate.value(frame),0.0,0.0,1.0)
+        gl.glScaled(scale.value(frame),scale.value(frame),scale.value(frame))
         if(mode == DrawMode.Preview && enabledSelectedOutline && selected){
 
         }
     }
     override fun onFrame() {
+        GlCanvas.gl2.glPushMatrix()
         onDraw(GlCanvas.gl2,DrawMode.Preview)
+        GlCanvas.gl2.glPopMatrix()
     }
 }

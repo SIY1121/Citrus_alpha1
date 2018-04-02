@@ -1,5 +1,6 @@
 package ui
 
+import com.jogamp.opengl.GLContext
 import interpolation.BounceInterpolator
 import interpolation.Interpolator
 import interpolation.InterpolatorManager
@@ -14,6 +15,7 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import objects.DrawableObject
 import javafx.stage.Screen.getPrimary
+import objects.ObjectManager
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 
@@ -35,6 +37,7 @@ class Main : Application() {
         Thread({
             SplashController.notifyProgress(0.1,"読み込み中...")
             InterpolatorManager.load()
+            ObjectManager.load()
             val root = FXMLLoader.load<Parent>(javaClass.getResource("main.fxml"))
             primaryStage.title = "Citrus"
             primaryStage.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))

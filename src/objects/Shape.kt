@@ -40,10 +40,10 @@ class Shape : DrawableObject() {
             }
             Type.Rectangle -> {
                 gl.glBegin(GL2.GL_QUADS)
-                gl.glVertex3d(-960.0 + x.value(frame),-540.0 + y.value(frame),z.value(frame))
-                gl.glVertex3d(-960.0+ x.value(frame),540.0 + y.value(frame),z.value(frame))
-                gl.glVertex3d(960.0+ x.value(frame),540.0 + y.value(frame),z.value(frame))
-                gl.glVertex3d(960.0+ x.value(frame),-540.0 + y.value(frame),z.value(frame))
+                gl.glVertex3d(-960.0,-540.0,0.0)
+                gl.glVertex3d(-960.0,540.0,0.0)
+                gl.glVertex3d(960.0,540.0 ,0.0)
+                gl.glVertex3d(960.0,-540.0 ,0.0)
                 gl.glEnd()
             }
             Type.Ellipse -> {

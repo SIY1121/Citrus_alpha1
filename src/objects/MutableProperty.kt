@@ -6,7 +6,7 @@ import interpolation.LinearInterpolator
 /**
  * キーフレームを持つプロパティ
  */
-class MutableProperty {
+class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var prefMin: Double = 100.0, var prefMax: Double = 100.0, def : Double = 0.0) {
     /**
      * キーフレームのデータクラス
      */
@@ -14,10 +14,6 @@ class MutableProperty {
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
-    var min = -1000.0
-    var max = 1000.0
-    var prefMin = -100.0
-    var prefMax = 100.0
 
     /**
      * キーフレームが無い時用の値
@@ -31,13 +27,14 @@ class MutableProperty {
     var temporaryMode = false
 
     init {
+        fixedValue = def
     }
 
     /**
      * 指定されたフレーム時点での値を取得
      */
     fun value(frame: Int): Double {
-        return if(keyFrames.size==0)
+        return if (keyFrames.size == 0)
             fixedValue
         else if (temporaryMode)
         //値を変更している場合の一時的な表示用
@@ -77,9 +74,9 @@ class MutableProperty {
      * キーフレームの場合は何番目のキーフレームかを返す
      * それ以外は-1
      */
-    fun isKeyFrame(frame: Int) : Int{
-        for((i,k) in keyFrames.withIndex())
-            if(k.frame==frame)
+    fun isKeyFrame(frame: Int): Int {
+        for ((i, k) in keyFrames.withIndex())
+            if (k.frame == frame)
                 return i
 
         return -1
