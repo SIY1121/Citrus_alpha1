@@ -2,6 +2,7 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
@@ -31,6 +32,7 @@ class Image : DrawableObject(),FileProperty.ChangeListener {
     override fun onChanged(file: String) {
         GlCanvas.instance.invoke(false,{
             texture = TextureIO.newTexture(File(file),false)
+            texture?.enable(it.gl)
             false
         })
     }
@@ -40,7 +42,6 @@ class Image : DrawableObject(),FileProperty.ChangeListener {
 
         val tex = texture ?: return
 
-        tex.enable(gl)
         tex.bind(gl)
 
         gl.glBegin(GL2.GL_QUADS)
@@ -53,6 +54,6 @@ class Image : DrawableObject(),FileProperty.ChangeListener {
         gl.glTexCoord2d(1.0,0.0)
         gl.glVertex3d(tex.width/2.0,-tex.height/2.0,0.0)
         gl.glEnd()
-        tex.disable(gl)
+        gl.glBindTexture(GL.GL_TEXTURE_2D,0)
     }
 }

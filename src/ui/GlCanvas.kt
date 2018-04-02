@@ -51,7 +51,7 @@ class GlCanvas : GLJPanel(), GLEventListener {
     override fun init(p0: GLAutoDrawable) {
         println("init")
         gl2 = p0.gl.gL2
-
+        gl2.glEnable(GL2.GL_TEXTURE_2D)
         gl2.glClearColor(1f, 0f, 0f, 1f)
 
         animator.add(p0)
