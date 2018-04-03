@@ -53,7 +53,12 @@ class TimelineController : Initializable {
     val layerHeight = 30.0
 
     companion object {
-
+        lateinit var instance : TimelineController
+        var wait = false
+            set(value){
+                field = value
+                instance.timelineRootPane.isDisable = field
+            }
         var pixelPerFrame = 2.0
     }
 
@@ -70,7 +75,7 @@ class TimelineController : Initializable {
     var editMode = TimeLineObject.EditMode.None
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
-
+        instance = this
         SplashController.notifyProgress(0.3, "UIを初期化中...")
 
         labelScrollPane.vvalueProperty().bindBidirectional(layerScrollPane.vvalueProperty())

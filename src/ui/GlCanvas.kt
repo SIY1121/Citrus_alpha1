@@ -1,5 +1,6 @@
 package ui
 
+import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import com.jogamp.opengl.GLAutoDrawable
 import com.jogamp.opengl.GLEventListener
@@ -51,8 +52,11 @@ class GlCanvas : GLJPanel(), GLEventListener {
     override fun init(p0: GLAutoDrawable) {
         println("init")
         gl2 = p0.gl.gL2
+        gl2.glDisable(GL2.GL_DEPTH_TEST)
         gl2.glEnable(GL2.GL_TEXTURE_2D)
-        gl2.glClearColor(1f, 0f, 0f, 1f)
+        gl2.glEnable(GL2.GL_BLEND)
+        gl2.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        gl2.glClearColor(0f, 0f, 0f, 1f)
 
         animator.add(p0)
         animator.start()
