@@ -57,7 +57,7 @@ class TimelineController : Initializable {
         var pixelPerFrame = 2.0
     }
 
-    var tick = Statics.project.fps
+    var tick : Double= Statics.project.fps.toDouble()
 
     val offsetX: Double
         get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
@@ -80,7 +80,7 @@ class TimelineController : Initializable {
         })
         scaleSlider.valueProperty().addListener({ _, _, n ->
             pixelPerFrame = n.toDouble()
-
+            tick = Statics.project.fps * (1.0/pixelPerFrame)
             for (pane in layerVBox.children)
                 if (pane is Pane)
                     for (o in pane.children) {
