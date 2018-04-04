@@ -23,6 +23,7 @@ import javafx.stage.FileChooser
 import objects.*
 import properties.*
 import util.Settings
+import util.Statics
 
 
 class TimeLineObject(var cObject: CitrusObject, val timelineController: TimelineController) : VBox(),
@@ -66,6 +67,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     private var currentFrame = 0
 
+    var strictSelected = false
     /**
      * カーソルの位置から
      * 編集モードを変更、通知する
@@ -124,6 +126,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         onMouseMoved = mouseMove
         onMouseExited = mouseExited
         onMouseClicked = mouseClicked
+
+
         label.maxWidthProperty().bind(widthProperty())
         label.minHeight = 30.0
         children.add(label)
@@ -200,18 +204,23 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                                 v.temporaryMode = true
                             }
                         })
+
+                        //予めキーフレーム用のPaneは追加しておく
+                        val pane = Pane()
+                        pane.prefHeight = 0.0
+                        pane.style = "-fx-background-color:yellow"
+                        pane.isVisible = false
+                        children.add(pane)//キーフレーム用のPaneを確保
+                        pp.pane = pane
+
                         //キーフレーム追加用コード
                         slider.setOnKeyPressed {
                             if (it.code == KeyCode.I) {
                                 println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
 
-                                if (v.keyFrames.size == 0)//はじめてのキーフレーム追加の場合
-                                {
-                                    val pane = Pane()
+                                if(v.keyFrames.size == 0){//初追加の場合
+                                    pane.isVisible = true//表示
                                     pane.minHeight = 10.0
-                                    pane.style = "-fx-background-color:yellow"
-                                    children.add(pane)//キーフレーム用のPaneを確保
-                                    pp.pane = pane
                                 }
 
                                 val keyFrameIndex = v.isKeyFrame(currentFrame)
@@ -268,7 +277,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
 
 
-                                    (children[i + 1] as Pane).children.add(circle)
+                                    pp.pane?.children?.add(circle)
 
                                     slider.style = "-fx-base:#FFFF00"
                                     println(v.keyFrames.last().value)
@@ -315,7 +324,9 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     is TextProperty -> {
                         grid.add(Label(name), 0, i)
                         val textArea = TextArea(v.text)
-                        textArea.setOnKeyTyped { v.text = textArea.text }
+                        textArea.textProperty().addListener { _,_,n ->
+                            v.text = n.toString()
+                        }
                         grid.add(textArea, 1, i)
                     }
                     is ColorProperty -> {
@@ -403,6 +414,12 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 }
             }
 
+    }
+
+    fun onDelete(){
+        (parent as Pane).children.remove(this)
+        Statics.project.Layer[cObject.layer].remove(cObject)
+        println("ondelete")
     }
 
 }

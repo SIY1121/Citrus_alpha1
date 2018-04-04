@@ -1,5 +1,6 @@
 package ui
 
+import javafx.application.Platform
 import javafx.beans.InvalidationListener
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingNode
@@ -15,6 +16,7 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import javafx.stage.Stage
 import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
@@ -80,7 +82,8 @@ class Controller : Initializable {
         var codec = avcodec.av_codec_next(null)
         while (codec!=null)
         {
-            println(codec.long_name().getString("ASCII"))
+
+            println(codec.long_name().getString("ASCII") + " - " + codec.name().getString("ASCII") + " - " + codec.id() + "/"+codec.type())
             codec = avcodec.av_codec_next(codec)
         }
         avformat.av_register_all()
@@ -93,6 +96,7 @@ class Controller : Initializable {
     }
 
     fun onOutput(actionEvent: ActionEvent) {
+
         Thread({
             VideoRenderer.startEncode()
         }).start()

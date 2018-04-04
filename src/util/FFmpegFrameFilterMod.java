@@ -1,4 +1,4 @@
-package ui;
+package util;
 
 /*
  * Copyright (C) 2015-2018 Samuel Audet

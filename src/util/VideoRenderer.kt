@@ -1,14 +1,9 @@
 package util
 
-import com.jogamp.opengl.GL
-import com.jogamp.opengl.GL2
-import org.bytedeco.javacv.FFmpegFrameFilter
 import org.bytedeco.javacv.FFmpegFrameRecorder
-import ui.FFmpegFrameFilterMod
 import ui.GlCanvas
 import java.io.File
 import java.nio.ByteBuffer
-import java.nio.IntBuffer
 
 class VideoRenderer {
     companion object {
@@ -17,7 +12,10 @@ class VideoRenderer {
         //lateinit var filter: FFmpegFrameFilterMod
         fun startEncode() {
             recorder = FFmpegFrameRecorder(File("out.mp4"), Statics.project.width, Statics.project.height)
-
+            //recorder.videoCodec = 28
+            recorder.videoCodecName = "nvenc_h264"
+            recorder.videoBitrate = 10000000
+            recorder.frameRate = 60.0
             time = System.currentTimeMillis()
             recorder.start()
             GlCanvas.instance.animator.stop()

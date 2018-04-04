@@ -6,6 +6,7 @@ import javafx.application.Platform
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import properties.FileProperty
+import properties.MutableProperty
 import ui.DialogFactory
 import util.Statics
 import java.nio.ByteBuffer
@@ -20,6 +21,10 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     @CProperty("ファイル",0)
     val file = FileProperty(listOf())
+
+    @CProperty("音量",1)
+    val volume = MutableProperty(0.0,1.0,0.0,1.0,1.0)
+
     var grabber : FFmpegFrameGrabber? = null
     var isGrabberStarted = false
 
@@ -41,7 +46,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
             //オーディオ出力準備
             val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat()?:0f),16,2,true,true)
-            println("audio setup ${audioFormat.sampleRate}")
+
             val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
             audioLine = AudioSystem.getLine(info) as SourceDataLine
             audioLine?.open(audioFormat)
@@ -82,7 +87,8 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
         val byteBuffer = ByteBuffer.allocate(this.limit()*2)
         val shortArray = ShortArray(this.limit())
         this.get(shortArray)
-        byteBuffer.asShortBuffer().put(shortArray)
+
+        byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value(frame)).toShort() }.toShortArray())
         return byteBuffer.array()
     }
 }

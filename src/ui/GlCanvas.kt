@@ -99,11 +99,13 @@ class GlCanvas : GLJPanel(), GLEventListener {
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
 
+
         if (rendering) {
             gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
             gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
             gl2.glViewport(0,0,Statics.project.width,Statics.project.height)
             gl2.glScaled(1.0,-1.0,1.0)
+            gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
         }
 
         for (o in currentObjects)

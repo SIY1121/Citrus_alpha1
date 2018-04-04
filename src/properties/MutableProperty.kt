@@ -46,7 +46,11 @@ class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var p
                 if (index == keyFrames.size - 1)//最後のキーフレームの場合
                 {
                     keyFrames[index].value
-                } else {
+                }else if(index == -1)//初めのキーフレームに到達してない場合
+                {
+                    keyFrames[0].value
+                }
+                else {
                     val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
                     keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
                 }

@@ -5,14 +5,13 @@ import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.scene.SnapshotParameters
+import javafx.scene.effect.DropShadow
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
-import properties.ColorProperty
-import properties.SelectableProperty
-import properties.SwitchableProperty
-import properties.TextProperty
+import javafx.scene.text.TextAlignment
+import properties.*
 import ui.GlCanvas
 import java.awt.GraphicsEnvironment
 import java.nio.ByteBuffer
@@ -60,7 +59,16 @@ class Text : DrawableObject(){
     @CProperty("縁取り色",3)
     val strokeColor = ColorProperty(Color.RED)
 
-    @CProperty("テキスト",4)
+    @CProperty("影",4)
+    val isShadow = SwitchableProperty(false)
+
+    @CProperty("影の色",5)
+    val shadowColor = ColorProperty(Color.BLACK)
+
+    @CProperty("サイズ",6)
+    val size = MutableProperty(min = 0.0,def = 200.0)
+
+    @CProperty("テキスト",7)
     val text = TextProperty()
 
 
@@ -73,6 +81,8 @@ class Text : DrawableObject(){
         color.listener = onColorChanged
         isStroke.listener = onIsStrokeChanged
         strokeColor.listener = onColorChanged
+        isShadow.listener = onIsStrokeChanged
+        shadowColor.listener = onColorChanged
         GlCanvas.instance.invoke(true,{
             val b = IntBuffer.allocate(1)
             it.gl.glGenTextures(1, b)
@@ -89,31 +99,42 @@ class Text : DrawableObject(){
     //TODO なんか反映が不安定
     fun UpdateTexture(){
         t.text = text.text
+        t.textAlignment = TextAlignment.CENTER
         t.style = "-fx-background-color:transparent"
         t.fill = color.color
-        t.font = Font(font.list[font.selectedIndex],200.0)
+        t.font = Font(font.list[font.selectedIndex],size.value(frame))
         if(isStroke.value){
             t.strokeWidth = 5.0
             t.stroke = strokeColor.color
+        }else
+        {
+            t.strokeWidth = 0.0
         }
+        if(isShadow.value)
+        {
+            val ds = DropShadow()
+            ds.color = shadowColor.color
+            t.effect = ds
+        }else
+            t.effect = null
 
-        if(t.layoutBounds.width <= 0 || t.layoutBounds.height <= 0){
+        if(t.boundsInLocal.width <= 0 || t.boundsInLocal.height <= 0){
             println("w h 0 ")
             return
         }
 
-        val w = WritableImage(t.layoutBounds.width.toInt(),t.layoutBounds.height.toInt())
+        val w = WritableImage(t.boundsInLocal.width.toInt(),t.boundsInLocal.height.toInt())
         val params = SnapshotParameters()
         params.fill = Color.TRANSPARENT
         t.snapshot(params,w)
 
-        val buf = ByteBuffer.allocate(t.layoutBounds.width.toInt() * t.layoutBounds.height.toInt() * 4)
+        val buf = ByteBuffer.allocate(t.boundsInLocal.width.toInt() * t.boundsInLocal.height.toInt() * 4)
 
-        w.pixelReader.getPixels(0,0,w.width.toInt(),w.height.toInt(), PixelFormat.getByteBgraInstance(),buf,t.layoutBounds.width.toInt()*4)
+        w.pixelReader.getPixels(0,0,w.width.toInt(),w.height.toInt(), PixelFormat.getByteBgraInstance(),buf,t.boundsInLocal.width.toInt()*4)
 
         GlCanvas.instance.invoke(true,{
             it.gl.glBindTexture(GL.GL_TEXTURE_2D,textureID)
-            it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA,t.layoutBounds.width.toInt(), t.layoutBounds.height.toInt()
+            it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA,t.boundsInLocal.width.toInt(), t.boundsInLocal.height.toInt()
                     , 0, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, buf)
             it.gl.glBindTexture(GL.GL_TEXTURE_2D,0)
             false

@@ -69,6 +69,7 @@ class TimelineController : Initializable {
 
     var selectedObjects: MutableList<TimeLineObject> = ArrayList()
     var selectedObjectOldWidth: MutableList<Double> = ArrayList()
+    val allTimelineObjects : MutableList<TimeLineObject> = ArrayList()
     var dragging = false
     var selectedOffsetX = 0.0
     var selectedOrigin = 0.0
@@ -116,6 +117,14 @@ class TimelineController : Initializable {
                     glCanvas.currentFrame--
                     caret.layoutX = glCanvas.currentFrame * pixelPerFrame
                 }
+                KeyCode.DELETE->{
+                    allTimelineObjects.filter { it.strictSelected }.forEach {
+                        it.onDelete()
+                        allTimelineObjects.remove(it)
+                    }
+                    glCanvas.currentObjects.clear()
+                    glCanvas.currentFrame = glCanvas.currentFrame
+                }
             }
             it.consume()
         }
@@ -140,7 +149,7 @@ class TimelineController : Initializable {
         layerPane.minHeight = layerHeight
         layerPane.maxHeight = layerHeight
         layerPane.minWidth = 2000.0
-        layerPane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434" else "#383838"
+        layerPane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434;" else "#383838;"
 
         //サブメニュー
         val menu = ContextMenu()
@@ -155,9 +164,15 @@ class TimelineController : Initializable {
                 cObject.layer = thisLayer
                 val o = TimeLineObject(cObject, this)
                 o.prefHeight = layerHeight * 2
-                o.style = "-fx-background-color:red"
+                o.style = "-fx-background-color:red;"
                 o.prefWidth = 200.0
                 o.setOnMousePressed {
+                    allTimelineObjects.forEach {
+                        it.style = "-fx-background-color:red;"
+                        it.strictSelected = false
+                    }
+                    o.style = "-fx-background-color:orange;"
+                    o.strictSelected = true
                     selectedObjects.add(o)
                     selectedObjectOldWidth.add(o.width)
                 }
@@ -171,7 +186,7 @@ class TimelineController : Initializable {
                 }
                 caret.layoutXProperty().addListener { _,_,_ ->
                     if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
-
+                allTimelineObjects.add(o)
                 layerPane.children.add(o)
                 layerScrollPane.layout()
             }
@@ -317,7 +332,7 @@ class TimelineController : Initializable {
             while (playing) {
                 glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
                 Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
-                Thread.sleep(13)
+                Thread.sleep((1.0/Statics.project.fps*1000.0 - 2.0).toLong())
             }
         }).start()
     }

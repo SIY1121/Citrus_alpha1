@@ -5,8 +5,11 @@ import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
+import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import org.bytedeco.javacv.FrameGrabber
+import org.bytedeco.javacv.OpenCVFrameGrabber
 import ui.GlCanvas
 import util.Statics
 import java.nio.ByteBuffer
@@ -15,6 +18,7 @@ import properties.FileProperty
 import properties.SwitchableProperty
 import ui.DialogFactory
 import ui.TimelineController
+import util.SerializedOperationQueue
 import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -34,7 +38,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     @CProperty("音声を再生する", 1)
     val isPlayAudio = SwitchableProperty(true)
 
-    var grabber: FFmpegFrameGrabber? = null
+    var grabber: FrameGrabber? = null
     var isGrabberStarted = false
 
     var oldFrame = -100
@@ -44,6 +48,8 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
 
     var audioLine: SourceDataLine? = null
 
+    val soundQueue = SerializedOperationQueue()
+
     init {
         file.listener = this
     }
@@ -51,7 +57,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     override fun onChanged(file: String) {
         val dialog = DialogFactory.buildOnProgressDialog("処理中", "動画を読み込み中...")
         dialog.show()
-        Thread({
+        launch{
             //デコーダ準備
             grabber = FFmpegFrameGrabber(file)
             grabber?.timestamp
@@ -92,7 +98,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 dialog.close()
                 displayName = "動画 $file"
             }
-        }).start()
+        }
     }
 
     override fun onDraw(gl: GL2, mode: DrawMode) {
@@ -106,24 +112,24 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 val now = (frame * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
 
                 //移動距離が30フレーム以上でシーク処理を実行
-                if (Math.abs(frame - oldFrame) > 30) {
+                if (Math.abs(frame - oldFrame) > 30 || frame < oldFrame) {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 10000
                     TimelineController.wait = false
                     buf = grabber?.grabFrame()
                 }
-
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
-                while (grabber?.timestamp ?: 0 < now || buf?.image == null) {
+                while (grabber?.timestamp ?: 0 <= now || buf?.image == null) {
                     //音声フレームが存在していたら再生する
                     if (buf?.samples != null && isPlayAudio.value) {
                         val s = (buf?.samples?.get(0) as ShortBuffer)
                         val arr = s.toByteArray()
-                        audioLine?.write(arr, 0, arr.size)
+                        soundQueue.push({
+                            audioLine?.write(arr, 0, arr.size)
+                        })
                     }
                     buf = grabber?.grabFrame()
-
                 }
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight
                         ?: 0, GL.GL_BGR, GL2.GL_UNSIGNED_BYTE, buf?.image?.get(0))
