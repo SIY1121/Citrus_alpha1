@@ -118,7 +118,7 @@ class Text : DrawableObject(){
             it.gl.glBindTexture(GL.GL_TEXTURE_2D,0)
             false
         })
-        displayName = "[テキスト] ${text.text}"
+        displayName = "[テキスト] ${text.text.replace("\n"," ")}"
     }
 
     override fun onDraw(gl: GL2, mode: DrawMode) {

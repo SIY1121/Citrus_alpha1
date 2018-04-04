@@ -16,6 +16,7 @@ import javafx.stage.StageStyle
 import objects.DrawableObject
 import javafx.stage.Screen.getPrimary
 import objects.ObjectManager
+import org.bytedeco.javacv.FFmpegFrameRecorder
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 

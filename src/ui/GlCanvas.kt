@@ -9,6 +9,9 @@ import com.jogamp.opengl.glu.GLU
 import com.jogamp.opengl.util.FPSAnimator
 import objects.CitrusObject
 import util.Statics
+import util.VideoRenderer
+import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 class GlCanvas : GLJPanel(), GLEventListener {
 
@@ -37,12 +40,16 @@ class GlCanvas : GLJPanel(), GLEventListener {
     val animator = FPSAnimator(Statics.project.fps)
 
     companion object {
-        lateinit var instance : GlCanvas
+        lateinit var instance: GlCanvas
         lateinit var gl2: GL2
         val glu = GLU()
     }
 
     val currentObjects: HashMap<Int, CitrusObject> = HashMap()
+
+    var frameBufID = 0
+    var renderBufID = 0
+    var rendering = false
 
     init {
         instance = this
@@ -55,8 +62,24 @@ class GlCanvas : GLJPanel(), GLEventListener {
         gl2.glDisable(GL2.GL_DEPTH_TEST)
         gl2.glEnable(GL2.GL_TEXTURE_2D)
         gl2.glEnable(GL2.GL_BLEND)
-        gl2.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         gl2.glClearColor(0f, 0f, 0f, 1f)
+
+
+        val b = IntBuffer.allocate(1)
+        gl2.glGenRenderbuffers(1, b)
+        renderBufID = b.get()
+
+        val bb = IntBuffer.allocate(1)
+        gl2.glGenFramebuffers(1, bb)
+        frameBufID = bb.get()
+
+        gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
+        gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Statics.project.width, Statics.project.height)
+
+        gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+        gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
+
 
         animator.add(p0)
         animator.start()
@@ -75,11 +98,24 @@ class GlCanvas : GLJPanel(), GLEventListener {
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
-        //println(currentObjects.size)
+
+        if (rendering) {
+            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+            gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+            gl2.glViewport(0,0,Statics.project.width,Statics.project.height)
+            gl2.glScaled(1.0,-1.0,1.0)
+        }
+
         for (o in currentObjects)
             o.value.onSuperFrame(currentFrame)
 
-        
+        if (rendering) {
+            val buf = ByteBuffer.allocate(Statics.project.width * Statics.project.height * 3)
+            gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
+            gl2.glReadPixels(0, 0, Statics.project.width, Statics.project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
+            VideoRenderer.recordFrame(buf)
+        }
+
     }
 
     override fun dispose(p0: GLAutoDrawable?) {

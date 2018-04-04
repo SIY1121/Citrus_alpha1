@@ -20,6 +20,7 @@ import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import util.Statics
+import util.VideoRenderer
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
@@ -89,5 +90,11 @@ class Controller : Initializable {
             println(format.long_name().getString("ASCII"))
             format = avformat.av_oformat_next(format)
         }
+    }
+
+    fun onOutput(actionEvent: ActionEvent) {
+        Thread({
+            VideoRenderer.startEncode()
+        }).start()
     }
 }
