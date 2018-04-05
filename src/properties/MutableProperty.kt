@@ -1,6 +1,11 @@
 package properties
 
 import interpolation.Interpolator
+import javafx.beans.property.DoubleProperty
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleIntegerProperty
+import kotlin.math.absoluteValue
 
 /**
  * キーフレームを持つプロパティ
@@ -9,7 +14,7 @@ class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var p
     /**
      * キーフレームのデータクラス
      */
-    data class KeyFrame(var frame: Int, var interpolation: Interpolator, var value: Double)
+    data class KeyFrame(var interpolation: Interpolator, var frame: IntegerProperty = SimpleIntegerProperty(), var value: DoubleProperty = SimpleDoubleProperty())
 
     val keyFrames: MutableList<KeyFrame> = ArrayList()
 
@@ -40,19 +45,19 @@ class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var p
             temporaryValue
         else
             if (keyFrames.size == 1)
-                keyFrames[0].value
+                keyFrames[0].value.value
             else {
                 val index = getKeyFrameIndex(frame)
                 if (index == keyFrames.size - 1)//最後のキーフレームの場合
                 {
-                    keyFrames[index].value
+                    keyFrames[index].value.value
                 }else if(index == -1)//初めのキーフレームに到達してない場合
                 {
-                    keyFrames[0].value
+                    keyFrames[0].value.value
                 }
                 else {
-                    val x = (frame - keyFrames[index].frame).toDouble() / (keyFrames[index + 1].frame - keyFrames[index].frame)
-                    keyFrames[index].value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value - keyFrames[index].value))
+                    val x = (frame - keyFrames[index].frame.value).toDouble() / (keyFrames[index + 1].frame.value - keyFrames[index].frame.value)
+                    keyFrames[index].value.value + (keyFrames[index].interpolation.getInterpolation(x) * (keyFrames[index + 1].value.value - keyFrames[index].value.value))
                 }
             }
 
@@ -64,7 +69,7 @@ class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var p
     fun getKeyFrameIndex(frame: Int): Int {
         for ((i, k) in keyFrames.withIndex()) {
             //初めてフレーム番号を越した場合、それが手前のキーフレームになる
-            if (frame < k.frame) {
+            if (frame < k.frame.value) {
                 //println(i - 1)
                 return i - 1
             }
@@ -79,7 +84,7 @@ class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var p
      */
     fun isKeyFrame(frame: Int): Int {
         for ((i, k) in keyFrames.withIndex())
-            if (k.frame == frame)
+            if (k.frame.value == frame)
                 return i
 
         return -1

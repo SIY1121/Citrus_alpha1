@@ -220,18 +220,28 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                                 if(v.keyFrames.size == 0){//初追加の場合
                                     pane.isVisible = true//表示
-                                    pane.minHeight = 10.0
+                                    pane.minHeight = 100.0
                                 }
 
                                 val keyFrameIndex = v.isKeyFrame(currentFrame)
                                 if (keyFrameIndex == -1) {
-                                    val keyFrame = MutableProperty.KeyFrame(currentFrame, BounceInterpolator(), slider.value)
+                                    val keyFrame = MutableProperty.KeyFrame(BounceInterpolator())
+                                    keyFrame.frame.set(currentFrame)
+                                    keyFrame.value.set(slider.value)
                                     v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, keyFrame)
                                     val circle = Circle()
                                     circle.layoutY = 5.0
                                     circle.radius = 5.0
                                     circle.fill = Paint.valueOf("BLUE")
                                     circle.layoutX = TimelineController.pixelPerFrame * currentFrame
+
+                                    //circleのx座標変更でframeを自動変更
+                                    keyFrame.frame.bind(circle.layoutXProperty().divide(TimelineController.pixelPerFrame))
+                                    //circleのy座標でvalueを自動変更
+                                    keyFrame.value.bind(circle.layoutYProperty().divide(pane.heightProperty()).subtract(0.5).divide(-0.5).multiply(v.max-v.min))
+//                                    keyFrame.value.addListener({_,_,n->
+//                                        circle.layoutY = Math.abs(n.toDouble()/(v.max-v.min)-1.0)
+//                                    })
 
                                     circle.setOnMouseEntered {
 
@@ -246,16 +256,18 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                                     circle.setOnMouseDragged {
                                         circle.layoutX = circle.localToParent(it.x, it.y).x
+                                        circle.layoutY = circle.localToParent(it.x, it.y).y
                                         it.consume()
                                     }
+
                                     circle.setOnMouseReleased {
-                                        keyFrame.frame = (circle.layoutX / TimelineController.pixelPerFrame).toInt()
-                                        v.keyFrames.sortBy { it.frame }
+                                        //keyFrame.frame.set((circle.layoutX / TimelineController.pixelPerFrame).toInt())
+                                        v.keyFrames.sortBy { it.frame.value }
                                         it.consume()
                                     }
                                     circle.setOnMousePressed {
                                         //押されたキーフレームに移動
-                                        timelineController.glCanvas.currentFrame = keyFrame.frame + cObject.start
+                                        timelineController.glCanvas.currentFrame = keyFrame.frame.value + cObject.start
                                         timelineController.caret.layoutX = timelineController.glCanvas.currentFrame * TimelineController.pixelPerFrame
                                         it.consume()
                                     }
@@ -282,7 +294,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                                     slider.style = "-fx-base:#FFFF00"
                                     println(v.keyFrames.last().value)
                                 } else {
-                                    v.keyFrames[keyFrameIndex].value = slider.value
+                                    v.keyFrames[keyFrameIndex].value.set(slider.value)
                                 }
 
 
@@ -409,7 +421,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 val pane = p.pane
                 if (pane != null && pro is MutableProperty) {
                     for ((i, v) in pane.children.withIndex()) {
-                        v.layoutX = pro.keyFrames[i].frame * TimelineController.pixelPerFrame
+                        v.layoutX = pro.keyFrames[i].frame.value * TimelineController.pixelPerFrame
                     }
                 }
             }

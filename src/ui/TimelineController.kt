@@ -157,13 +157,12 @@ class TimelineController : Initializable {
         menu.items.add(menuObject)
 
         for(obj in ObjectManager.list){
-            val menuShape = MenuItem(obj.key)
+            val menuItem = MenuItem(obj.key)
             val thisLayer = layerCount
-            menuShape.setOnAction {
+            menuItem.setOnAction {
                 val cObject = (obj.value.newInstance() as CitrusObject)
                 cObject.layer = thisLayer
                 val o = TimeLineObject(cObject, this)
-                o.prefHeight = layerHeight * 2
                 o.style = "-fx-background-color:red;"
                 o.prefWidth = 200.0
                 o.setOnMousePressed {
@@ -190,7 +189,7 @@ class TimelineController : Initializable {
                 layerPane.children.add(o)
                 layerScrollPane.layout()
             }
-            menuObject.items.add(menuShape)
+            menuObject.items.add(menuItem)
             layerPane.setOnMouseClicked {
                 if (it.button == MouseButton.SECONDARY)
                     menu.show(layerPane, it.screenX, it.screenY)
