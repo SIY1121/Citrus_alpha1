@@ -2,9 +2,11 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.jogamp.common.util.Bitstream
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
+import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
@@ -19,6 +21,7 @@ import properties.SwitchableProperty
 import ui.DialogFactory
 import ui.TimelineController
 import util.SerializedOperationQueue
+import java.io.*
 import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -35,10 +38,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     @CProperty("ファイル", 0)
     val file = FileProperty(listOf())
 
-    @CProperty("音声を再生する", 1)
-    val isPlayAudio = SwitchableProperty(true)
-
-    var grabber: FrameGrabber? = null
+    var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
 
     var oldFrame = -100
@@ -46,12 +46,9 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
 
     var textureID: Int = 0
 
-    var audioLine: SourceDataLine? = null
-
-    val soundQueue = SerializedOperationQueue()
-
     init {
         file.listener = this
+
     }
 
     override fun onChanged(file: String) {
@@ -63,15 +60,6 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
             grabber?.timestamp
             grabber?.start()
             isGrabberStarted = true
-
-            //オーディオ出力準備
-            val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat() ?: 0f), 16, 2, true, true)
-
-            val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
-            audioLine = AudioSystem.getLine(info) as SourceDataLine
-            audioLine?.open(audioFormat)
-            audioLine?.start()
-
             //テクスチャ準備
             GlCanvas.instance.invoke(true, {
                 if (textureID != 0) {
@@ -116,20 +104,12 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 10000
                     TimelineController.wait = false
-                    buf = grabber?.grabFrame()
+                    //buf = grabber?.grabFrame()
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
-                while (grabber?.timestamp ?: 0 <= now || buf?.image == null) {
-                    //音声フレームが存在していたら再生する
-                    if (buf?.samples != null && isPlayAudio.value) {
-                        val s = (buf?.samples?.get(0) as ShortBuffer)
-                        val arr = s.toByteArray()
-                        soundQueue.push({
-                            audioLine?.write(arr, 0, arr.size)
-                        })
-                    }
-                    buf = grabber?.grabFrame()
+                while (grabber?.timestamp ?: 0 <= now) {
+                    buf = grabber?.grabImage()
                 }
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight
                         ?: 0, GL.GL_BGR, GL2.GL_UNSIGNED_BYTE, buf?.image?.get(0))

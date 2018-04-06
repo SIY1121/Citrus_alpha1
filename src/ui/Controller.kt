@@ -101,4 +101,8 @@ class Controller : Initializable {
             VideoRenderer.startEncode()
         }).start()
     }
+
+    fun onTest(actionEvent: ActionEvent) {
+        DialogFactory.ShowTestScene()
+    }
 }
