@@ -25,5 +25,10 @@ class DialogFactory {
             stage.y = (primScreenBounds.height - 100) / 2
             return stage
         }
+        fun ShowTestScene(){
+            val stage = Stage()
+            stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("testScene.fxml")))
+            stage.show()
+        }
     }
 }

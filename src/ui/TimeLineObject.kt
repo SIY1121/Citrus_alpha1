@@ -16,6 +16,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.Node
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Paint
 import javafx.scene.shape.Circle
@@ -191,11 +192,11 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     is MutableProperty -> {
 
                         grid.add(Label(name), 0, i)
-                        val slider = Slider()
+                        val slider = CustomSlider()
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
-                        slider.valueProperty().addListener({ _, _, n ->
+                        slider.valueProperty.addListener({ _, _, n ->
                             //キーフレームがない場合
                             if (v.keyFrames.size == 0) {
                                 v.fixedValue = n.toDouble()
@@ -214,78 +215,80 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         pp.pane = pane
 
                         //キーフレーム追加用コード
-                        slider.setOnKeyPressed {
-                            if (it.code == KeyCode.I) {
-                                println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
+                        slider.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover{
+                            override fun onKeyPressed(it: KeyEvent) {
+                                if (it.code == KeyCode.I) {
+                                    println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
 
-                                if(v.keyFrames.size == 0){//初追加の場合
-                                    pane.isVisible = true//表示
-                                    pane.minHeight = 10.0
-                                }
-
-                                val keyFrameIndex = v.isKeyFrame(currentFrame)
-                                if (keyFrameIndex == -1) {
-                                    val keyFrame = MutableProperty.KeyFrame(currentFrame, BounceInterpolator(), slider.value)
-                                    v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, keyFrame)
-                                    val circle = Circle()
-                                    circle.layoutY = 5.0
-                                    circle.radius = 5.0
-                                    circle.fill = Paint.valueOf("BLUE")
-                                    circle.layoutX = TimelineController.pixelPerFrame * currentFrame
-
-                                    circle.setOnMouseEntered {
-
-                                        scene.cursor = Cursor.HAND
-                                        it.consume()
-                                    }
-                                    circle.setOnMouseMoved { it.consume() }
-                                    circle.setOnMouseExited {
-                                        scene.cursor = Cursor.DEFAULT
-                                        it.consume()
+                                    if(v.keyFrames.size == 0){//初追加の場合
+                                        pane.isVisible = true//表示
+                                        pane.minHeight = 10.0
                                     }
 
-                                    circle.setOnMouseDragged {
-                                        circle.layoutX = circle.localToParent(it.x, it.y).x
-                                        it.consume()
-                                    }
-                                    circle.setOnMouseReleased {
-                                        keyFrame.frame = (circle.layoutX / TimelineController.pixelPerFrame).toInt()
-                                        v.keyFrames.sortBy { it.frame }
-                                        it.consume()
-                                    }
-                                    circle.setOnMousePressed {
-                                        //押されたキーフレームに移動
-                                        timelineController.glCanvas.currentFrame = keyFrame.frame + cObject.start
-                                        timelineController.caret.layoutX = timelineController.glCanvas.currentFrame * TimelineController.pixelPerFrame
-                                        it.consume()
-                                    }
+                                    val keyFrameIndex = v.isKeyFrame(currentFrame)
+                                    if (keyFrameIndex == -1) {
+                                        val keyFrame = MutableProperty.KeyFrame(currentFrame, BounceInterpolator(), slider.value)
+                                        v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, keyFrame)
+                                        val circle = Circle()
+                                        circle.layoutY = 5.0
+                                        circle.radius = 5.0
+                                        circle.fill = Paint.valueOf("BLUE")
+                                        circle.layoutX = TimelineController.pixelPerFrame * currentFrame
 
-                                    val contextMenu = ContextMenu()
-                                    for (i in InterpolatorManager.interpolator) {
-                                        val menu = MenuItem(i.key)
-                                        menu.setOnAction {
-                                            keyFrame.interpolation = (i.value.newInstance() as Interpolator)
-                                        }
-                                        contextMenu.items.add(menu)
-                                    }
-                                    circle.setOnMouseClicked {
-                                        if (it.button == MouseButton.SECONDARY) {
-                                            contextMenu.show(circle, it.screenX, it.screenY)
+                                        circle.setOnMouseEntered {
+
+                                            scene.cursor = Cursor.HAND
                                             it.consume()
                                         }
+                                        circle.setOnMouseMoved { it.consume() }
+                                        circle.setOnMouseExited {
+                                            scene.cursor = Cursor.DEFAULT
+                                            it.consume()
+                                        }
+
+                                        circle.setOnMouseDragged {
+                                            circle.layoutX = circle.localToParent(it.x, it.y).x
+                                            it.consume()
+                                        }
+                                        circle.setOnMouseReleased {
+                                            keyFrame.frame = (circle.layoutX / TimelineController.pixelPerFrame).toInt()
+                                            v.keyFrames.sortBy { it.frame }
+                                            it.consume()
+                                        }
+                                        circle.setOnMousePressed {
+                                            //押されたキーフレームに移動
+                                            timelineController.glCanvas.currentFrame = keyFrame.frame + cObject.start
+                                            timelineController.caret.layoutX = timelineController.glCanvas.currentFrame * TimelineController.pixelPerFrame
+                                            it.consume()
+                                        }
+
+                                        val contextMenu = ContextMenu()
+                                        for (i in InterpolatorManager.interpolator) {
+                                            val menu = MenuItem(i.key)
+                                            menu.setOnAction {
+                                                keyFrame.interpolation = (i.value.newInstance() as Interpolator)
+                                            }
+                                            contextMenu.items.add(menu)
+                                        }
+                                        circle.setOnMouseClicked {
+                                            if (it.button == MouseButton.SECONDARY) {
+                                                contextMenu.show(circle, it.screenX, it.screenY)
+                                                it.consume()
+                                            }
+                                        }
+
+
+
+                                        pp.pane?.children?.add(circle)
+
+                                        slider.style = "-fx-base:#FFFF00"
+                                        println(v.keyFrames.last().value)
+                                    } else {
+                                        v.keyFrames[keyFrameIndex].value = slider.value
                                     }
 
 
-
-                                    pp.pane?.children?.add(circle)
-
-                                    slider.style = "-fx-base:#FFFF00"
-                                    println(v.keyFrames.last().value)
-                                } else {
-                                    v.keyFrames[keyFrameIndex].value = slider.value
                                 }
-
-
                             }
                         }
                         //GridPane.setMargin(slider, Insets(5.0))
@@ -387,9 +390,9 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     is MutableProperty -> {
                         //フレーム移動時にプレビュー用モードオフ
                         pro.temporaryMode = false
-                        (p.node as Slider).value = pro.value(currentFrame)
+                        (p.node as CustomSlider).value = pro.value(currentFrame)
 
-                        (p.node as Slider).style = "-fx-base:" + when {
+                        (p.node as CustomSlider).style = "-fx-background-color:" + when {
                             pro.keyFrames.size == 0 -> "#323232"
                             pro.isKeyFrame(currentFrame) != -1 -> "#FFFF00"
                             else -> "#9B5A00"

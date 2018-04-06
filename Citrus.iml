@@ -12,5 +12,6 @@
     <orderEntry type="library" name="json" level="project" />
     <orderEntry type="library" name="ffmpeg" level="project" />
     <orderEntry type="library" name="javacv" level="project" />
+    <orderEntry type="library" name="openal" level="project" />
   </component>
 </module>

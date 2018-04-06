@@ -14,6 +14,7 @@
                 <Menu text="編集" />
                 <Menu text="ヘルプ">
                     <MenuItem onAction="#onCodecInfo" text="コーデック情報"/>
+                    <MenuItem onAction="#onTest" text="テスト" />
                     <MenuItem onAction="#onVersionInfo" text="バージョン情報" />
                 </Menu>
             </MenuBar>
