@@ -379,7 +379,6 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
     fun onMoved() {
         cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
         cObject.end = ((layoutX + width) / TimelineController.pixelPerFrame).toInt()
-        //println("${Statics.project.Layer[cObject.layer].indexOf(cObject)}/${Statics.project.Layer[cObject.layer].size-1}")
         cObject.onLayoutUpdate()
     }
 

@@ -24,7 +24,9 @@ import objects.Shape
 import util.Statics
 import java.net.URL
 import java.util.*
+import java.util.Map.Entry.comparingByValue
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.reflect.full.createInstance
 
 class TimelineController : Initializable {
@@ -300,6 +302,44 @@ class TimelineController : Initializable {
                 when (editMode) {
                     TimeLineObject.EditMode.Move -> {
                         o.layoutX = mouseEvent.x - selectedOffsetX
+                        o.onMoved()
+
+
+                        //スナップ実装
+                        val nearest = Statics.project.Layer.flatten().filter {
+                            it != o.cObject && it.start <= o.cObject.end + 5 && o.cObject.start <= it.end + 5
+                        }.minBy {
+                            intArrayOf(
+                                    Math.abs(it.start - o.cObject.end),
+                                    Math.abs(o.cObject.start - it.start),
+                                    Math.abs(it.end - o.cObject.end),
+                                    Math.abs(o.cObject.start - it.end)
+                            ).min() ?: 0
+                        }
+                        if (nearest != null) {
+                            val map: HashMap<Int, Int> = HashMap()
+                            map[0] = Math.abs(nearest.start - o.cObject.end)
+                            map[1] = Math.abs(o.cObject.start - nearest.start)
+                            map[2] = Math.abs(nearest.end - o.cObject.end)
+                            map[3] = Math.abs(o.cObject.start - nearest.end)
+
+                            when (map.filter { it.value <= 4 }.minBy { it.value }?.key) {
+                                0 -> o.layoutX = nearest.start * pixelPerFrame - o.width
+                                1 -> o.layoutX = nearest.start * pixelPerFrame
+                                2 -> o.layoutX = nearest.end * pixelPerFrame - o.width
+                                3 -> o.layoutX = nearest.end * pixelPerFrame
+                            }
+                        }
+                        //スナップ実装終わり
+
+                        //重複防止
+                        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end && o.cObject.start <= it.end }
+                        if (block != null)
+                            o.layoutX = if (Math.abs(block.start - o.cObject.end) < Math.abs(o.cObject.start - block.end))
+                                block.start * pixelPerFrame - o.width
+                            else
+                                block.end * pixelPerFrame
+                        //重複防止終わり
 
                         if (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] != o.parent) {
                             val src = (o.parent as Pane)
