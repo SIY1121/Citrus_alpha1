@@ -124,6 +124,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     init {
         cObject.displayNameChangeListener = this
+        cObject.uiObject = this
         onMouseMoved = mouseMove
         onMouseExited = mouseExited
         onMouseClicked = mouseClicked
@@ -140,17 +141,17 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
 
         //cObjectの親クラスをたどり、それぞれのプロパティを取得
-        cObject.javaClass.kotlin.allSuperclasses.reversed().forEach { clazz ->
+        cObject.javaClass.kotlin.allSuperclasses.reversed().filter{!it.java.isInterface}.forEach { clazz ->
             //これらのクラスは除外
             if (clazz != Any::class && clazz != CitrusObject::class) {
                 val section = PropertySection(
-                        if (clazz.annotations.isNotEmpty() && clazz.annotations[0] is CObject)
-                            (clazz.annotations[0] as CObject).name
+                        if (clazz.annotations.any{it is CObject})
+                            (clazz.annotations.first{it is CObject} as CObject).name
                         else
                             "無題"
                 )
                 //CPropertyアノテーションを持ったプロパティのみ登録
-                clazz.memberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
+                clazz.memberProperties.filter {it.annotations.any{it is CProperty} }
                         .forEach { p ->
                             section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null, null))
                         }
@@ -160,11 +161,11 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         //cObject本体のプロパティを登録
         val section = PropertySection(
-                if (cObject.javaClass.kotlin.annotations.isNotEmpty() && cObject.javaClass.kotlin.annotations[0] is CObject)
-                    (cObject.javaClass.kotlin.annotations[0] as CObject).name
+                if (cObject.javaClass.annotations.any{it is CObject})
+                    (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).name
                 else
                     "無題")
-        cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.isNotEmpty() && it.annotations[0] is CProperty }
+        cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.any{it is CProperty} }
                 .forEach {
                     section.property.add(PropertyData(it, null, null, null))
                 }
@@ -182,10 +183,11 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             accordion.isAnimated = false
 
             //CPropertyアノテーションのindexに基づいてソート
-            p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
+            //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
+            p.property.sortBy { (it.kProprety.annotations.first{it is CProperty} as CProperty).index }
 
             for ((i, pp) in p.property.withIndex()) {
-                val name = (pp.kProprety.annotations[0] as CProperty).displayName
+                val name = (pp.kProprety.annotations.first{it is CProperty} as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
                 pp.property = v
                 when (v) {

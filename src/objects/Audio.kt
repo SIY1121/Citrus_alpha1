@@ -1,11 +1,15 @@
 package objects
 
+import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
 import com.jogamp.openal.AL
 import com.jogamp.openal.ALFactory
 import com.jogamp.openal.util.ALut
 import javafx.application.Platform
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
+import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import properties.FileProperty
@@ -21,6 +25,7 @@ import javax.sound.sampled.DataLine
 import javax.sound.sampled.SourceDataLine
 
 @CObject("音声")
+@CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
 class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     @CProperty("ファイル", 0)
@@ -36,6 +41,8 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     var oldFrame = -100
     var buf: Frame? = null
+
+    var audioLength = 0
 
     //val al: AL
     //val bufCount = 2
@@ -62,13 +69,28 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 //        println("al error : " + al.alGetError())
     }
 
+    override fun onFileDropped(file: String) {
+        onChanged(file)
+    }
+
     override fun onChanged(file: String) {
         val dialog = DialogFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
-        Thread({
+        launch{
             grabber = FFmpegFrameGrabber(file)
             grabber?.start()
-
+            if (grabber?.videoCodec == 0) {
+                Platform.runLater {
+                    dialog.close()
+                    val alert = Alert(Alert.AlertType.ERROR, "音声コーデックを識別できませんでした", ButtonType.CLOSE)
+                    alert.headerText = null
+                    alert.showAndWait()
+                }
+                return@launch
+            }
+            audioLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
+                    ?: 30.0))).toInt()
+            end = start + audioLength
             //オーディオ出力準備
             val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat() ?: 0f), 16, 2, true, true)
 
@@ -77,12 +99,20 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
             audioLine?.open(audioFormat)
             audioLine?.start()
             isGrabberStarted = true
+
             Platform.runLater {
+                uiObject?.onScaleChanged()
                 dialog.close()
                 displayName = "音声 $file"
             }
-        }).start()
+        }
 
+    }
+
+    override fun onLayoutUpdate() {
+        if (end - start > audioLength)
+            end = start + audioLength
+        uiObject?.onScaleChanged()
     }
 
     override fun onFrame() {
@@ -94,8 +124,8 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
                     grabber?.timestamp = now
 
                 while (grabber?.timestamp ?: 0 <= now) {
-                   // println("a:" + grabber?.timestamp + " ")
-                    if(buf?.samples!=null) {
+                    // println("a:" + grabber?.timestamp + " ")
+                    if (buf?.samples != null) {
 
                         val s = (buf?.samples?.get(0) as ShortBuffer)
                         val arr = s.toByteArray()
@@ -135,9 +165,6 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 //                            println("al error 2 : " + al.alGetError())
 //                        }
 //                    }
-
-
-
 
 
                     buf = grabber?.grabSamples()

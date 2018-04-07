@@ -1,6 +1,7 @@
 package ui
 
 import com.jogamp.opengl.GLContext
+import com.sun.javafx.css.StyleManager
 import interpolation.BounceInterpolator
 import interpolation.Interpolator
 import interpolation.InterpolatorManager
@@ -24,6 +25,8 @@ import java.nio.file.attribute.BasicFileAttributes
 class Main : Application() {
     @Throws(Exception::class)
     override fun start(primaryStage: Stage) {
+
+        StyleManager.getInstance().addUserAgentStylesheet("/ui/main.css")
 
         val primScreenBounds = Screen.getPrimary().visualBounds
         val splash = Stage()

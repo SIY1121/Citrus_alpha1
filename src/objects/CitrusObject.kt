@@ -1,6 +1,7 @@
 package objects
 
 import effects.Effect
+import ui.TimeLineObject
 import util.Statics
 
 /**
@@ -22,6 +23,10 @@ abstract class CitrusObject{
 
     val effects : MutableList<Effect> = ArrayList()
 
+    val linkedObjects : MutableList<CitrusObject> = ArrayList()
+
+    var uiObject : TimeLineObject? = null
+
     interface DisplayNameChangeListener {
         fun onDisplayNameChanged(name: String)
     }
@@ -32,6 +37,10 @@ abstract class CitrusObject{
      * タイムラインで動かされ終わった時に呼び出される
      */
     open fun onLayoutUpdate() {
+
+    }
+
+    open fun onFileDropped(file : String){
 
     }
 

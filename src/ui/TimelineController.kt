@@ -1,5 +1,7 @@
 package ui
 
+import annotation.CDroppable
+import annotation.CProperty
 import javafx.application.Platform
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
@@ -8,6 +10,7 @@ import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
@@ -22,6 +25,7 @@ import util.Statics
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.reflect.full.createInstance
 
 class TimelineController : Initializable {
     @FXML
@@ -53,23 +57,23 @@ class TimelineController : Initializable {
     val layerHeight = 30.0
 
     companion object {
-        lateinit var instance : TimelineController
+        lateinit var instance: TimelineController
         var wait = false
-            set(value){
+            set(value) {
                 field = value
                 instance.timelineRootPane.isDisable = field
             }
         var pixelPerFrame = 2.0
     }
 
-    var tick : Double= Statics.project.fps.toDouble()
+    var tick: Double = Statics.project.fps.toDouble()
 
     val offsetX: Double
         get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
 
     var selectedObjects: MutableList<TimeLineObject> = ArrayList()
     var selectedObjectOldWidth: MutableList<Double> = ArrayList()
-    val allTimelineObjects : MutableList<TimeLineObject> = ArrayList()
+    val allTimelineObjects: MutableList<TimeLineObject> = ArrayList()
     var dragging = false
     var selectedOffsetX = 0.0
     var selectedOrigin = 0.0
@@ -86,7 +90,7 @@ class TimelineController : Initializable {
         })
         scaleSlider.valueProperty().addListener({ _, _, n ->
             pixelPerFrame = n.toDouble()
-            tick = Statics.project.fps * (1.0/pixelPerFrame)
+            tick = Statics.project.fps * (1.0 / pixelPerFrame)
             for (pane in layerVBox.children)
                 if (pane is Pane)
                     for (o in pane.children) {
@@ -117,7 +121,7 @@ class TimelineController : Initializable {
                     glCanvas.currentFrame--
                     caret.layoutX = glCanvas.currentFrame * pixelPerFrame
                 }
-                KeyCode.DELETE->{
+                KeyCode.DELETE -> {
                     allTimelineObjects.filter { it.strictSelected }.forEach {
                         it.onDelete()
                         allTimelineObjects.remove(it)
@@ -138,11 +142,13 @@ class TimelineController : Initializable {
         hScrollBar.requestLayout()
 
 
-        caret.layoutXProperty().addListener({_,_,n->
-            glCanvas.currentFrame = (n.toDouble()/ pixelPerFrame).toInt()})
+
+        caret.layoutXProperty().addListener({ _, _, n ->
+            glCanvas.currentFrame = (n.toDouble() / pixelPerFrame).toInt()
+        })
     }
 
-    fun generateLayer() {
+    private fun generateLayer() {
 
         //レイヤーペイン生成
         val layerPane = Pane()
@@ -150,53 +156,41 @@ class TimelineController : Initializable {
         layerPane.maxHeight = layerHeight
         layerPane.minWidth = 2000.0
         layerPane.style = "-fx-background-color:" + if (layerCount % 2 == 0) "#343434;" else "#383838;"
+        val thisLayer = layerCount
+
+        layerPane.setOnDragOver {
+            if (it.dragboard.hasFiles() && ObjectManager.detectObjectByExtension(it.dragboard.files[0].extension) != null)
+                it.acceptTransferModes(TransferMode.COPY)
+        }
+        layerPane.setOnDragDropped {
+            val board = it.dragboard
+            if (board.hasFiles()) {
+                val target = ObjectManager.detectObjectByExtension(board.files[0].extension)
+                if (target != null)
+                    addObject(target, thisLayer, board.files[0].absolutePath)
+
+
+                it.isDropCompleted = true
+            }
+        }
 
         //サブメニュー
         val menu = ContextMenu()
         val menuObject = Menu("オブジェクトの追加")
         menu.items.add(menuObject)
 
-        for(obj in ObjectManager.list){
-            val menuShape = MenuItem(obj.key)
-            val thisLayer = layerCount
-            menuShape.setOnAction {
-                val cObject = (obj.value.newInstance() as CitrusObject)
-                cObject.layer = thisLayer
-                val o = TimeLineObject(cObject, this)
-                o.prefHeight = layerHeight * 2
-                o.style = "-fx-background-color:red;"
-                o.prefWidth = 200.0
-                o.setOnMousePressed {
-                    allTimelineObjects.forEach {
-                        it.style = "-fx-background-color:red;"
-                        it.strictSelected = false
-                    }
-                    o.style = "-fx-background-color:orange;"
-                    o.strictSelected = true
-                    selectedObjects.add(o)
-                    selectedObjectOldWidth.add(o.width)
-                }
-                o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
-                    override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
-                        if (!dragging) {
-                            editMode = mode
-                            selectedOffsetX = offsetX
-                        }
-                    }
-                }
-                caret.layoutXProperty().addListener { _,_,_ ->
-                    if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame) }
-                allTimelineObjects.add(o)
-                layerPane.children.add(o)
-                layerScrollPane.layout()
+        for (obj in ObjectManager.list) {
+            val childMenu = MenuItem(obj.key)
+
+            childMenu.setOnAction {
+                addObject(obj.value, thisLayer, null)
             }
-            menuObject.items.add(menuShape)
+            menuObject.items.add(childMenu)
             layerPane.setOnMouseClicked {
                 if (it.button == MouseButton.SECONDARY)
                     menu.show(layerPane, it.screenX, it.screenY)
             }
         }
-
 
 
         //label.minHeightProperty().bind(pane.heightProperty())
@@ -240,7 +234,42 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun drawAxis() {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String?) {
+        val layerPane = layerVBox.children[layerIndex] as Pane
+        val cObject = (clazz.newInstance() as CitrusObject)
+        cObject.layer = layerIndex
+        val o = TimeLineObject(cObject, this)
+        o.prefHeight = layerHeight * 2
+        o.style = "-fx-background-color:red;"
+        o.prefWidth = 200.0
+        o.setOnMousePressed {
+            allTimelineObjects.forEach {
+                it.style = "-fx-background-color:red;"
+                it.strictSelected = false
+            }
+            o.style = "-fx-background-color:orange;"
+            o.strictSelected = true
+            selectedObjects.add(o)
+            selectedObjectOldWidth.add(o.width)
+        }
+        o.editModeChangeListener = object : TimeLineObject.EditModeChangeListener {
+            override fun onEditModeChanged(mode: TimeLineObject.EditMode, offsetX: Double, offsetY: Double) {
+                if (!dragging) {
+                    editMode = mode
+                    selectedOffsetX = offsetX
+                }
+            }
+        }
+        caret.layoutXProperty().addListener { _, _, _ ->
+            if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame)
+        }
+        allTimelineObjects.add(o)
+        layerPane.children.add(o)
+        layerScrollPane.layout()
+        if (file != null) cObject.onFileDropped(file)
+    }
+
+    private fun drawAxis() {
         val g = timelineAxis.graphicsContext2D
         g.clearRect(0.0, 0.0, g.canvas.width, g.canvas.height)
         g.fill = Color.WHITE
@@ -259,6 +288,7 @@ class TimelineController : Initializable {
         dragging = true
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
+            parentController.rightPane.children.clear()
             caret.layoutX = mouseEvent.x
         }
     }
@@ -332,7 +362,7 @@ class TimelineController : Initializable {
             while (playing) {
                 glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
                 Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
-                Thread.sleep((1.0/Statics.project.fps*1000.0 - 2.0).toLong())
+                Thread.sleep((1.0 / Statics.project.fps * 1000.0 - 2.0).toLong())
             }
         }).start()
     }

@@ -20,8 +20,7 @@ class Image : DrawableObject(), FileProperty.ChangeListener {
 
     @CProperty("ファイル",0)
     val file = FileProperty(listOf(
-            FileChooser.ExtensionFilter("PNG", "*.png"),
-            FileChooser.ExtensionFilter("JPG", "*.jpg")
+            FileChooser.ExtensionFilter("画像ファイル", "*.png","*.jpg","*.bmp","*.gif")
     ))
 
     var texture :Texture? = null

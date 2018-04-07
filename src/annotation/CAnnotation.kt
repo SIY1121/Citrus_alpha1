@@ -21,5 +21,16 @@ annotation class CProperty(val displayName : String,val index : Int)
 @Target(AnnotationTarget.CLASS)
 annotation class CObject(val name:String)
 
+/***
+ * キーフレーム補間クラスへの和名設定用
+ */
 @Target(AnnotationTarget.CLASS)
 annotation class CInterpolation(val name : String)
+
+/**
+ * Citrus Objectでファイルドロップに反応するクラスに対して指定する
+ * フィルタに指定した拡張子のファイルがドロップされた場合
+ * onFireDroppedが発生する
+ */
+@Target(AnnotationTarget.CLASS)
+annotation class CDroppable(val filter : Array<String>)

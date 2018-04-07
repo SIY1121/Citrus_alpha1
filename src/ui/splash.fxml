@@ -16,9 +16,5 @@
             <Font name="System Bold" size="22.0" />
          </font>
       </Label>
-   <Label fx:id="messageLabel" alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="372.0" text="起動しています..." textAlignment="RIGHT" textFill="WHITE" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0">
-      <font>
-         <Font name="System Bold" size="14.0" />
-      </font>
-   </Label>
+   <Label fx:id="messageLabel" alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="372.0" text="起動しています..." textAlignment="RIGHT" textFill="WHITE" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0"/>
 </AnchorPane>

@@ -1,11 +1,15 @@
 package objects
 
+import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
 import com.jogamp.common.util.Bitstream
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
+import javafx.animation.Timeline
 import javafx.application.Platform
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
 import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -30,6 +34,7 @@ import javax.sound.sampled.SourceDataLine
 
 
 @CObject("動画")
+@CDroppable(["asf","wmv","wma","asf","wmv","wma","avi","flv","h261","h263","m4v","m4a","ismv","isma","mkv","mjpg","mjpeg","mp4","mpg","mpeg","mpg","mpeg","m1v","dvd","vob","vob","ts","m2t","m2ts","mts","nut","ogv","webm","chk"])
 class Video : DrawableObject(), FileProperty.ChangeListener {
 
     override val id = "citrus/video"
@@ -46,20 +51,39 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
 
     var textureID: Int = 0
 
+    var videoLength = 0
+
     init {
         file.listener = this
 
     }
 
+    override fun onFileDropped(file: String) {
+        onChanged(file)
+        TimelineController.instance.addObject(Audio::class.java, layer + 1, file)
+    }
+
     override fun onChanged(file: String) {
         val dialog = DialogFactory.buildOnProgressDialog("処理中", "動画を読み込み中...")
         dialog.show()
-        launch{
+        launch {
             //デコーダ準備
             grabber = FFmpegFrameGrabber(file)
             grabber?.timestamp
             grabber?.start()
+            if(grabber?.videoCodec==0){
+                Platform.runLater {
+                    val alert = Alert(Alert.AlertType.ERROR,"動画コーデックを識別できませんでした", ButtonType.CLOSE)
+                    alert.headerText = null
+                    dialog.close()
+                    alert.showAndWait()
+                }
+                return@launch
+            }
             isGrabberStarted = true
+            videoLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
+                    ?: 30.0))).toInt()
+            end = start + videoLength
             //テクスチャ準備
             GlCanvas.instance.invoke(true, {
                 if (textureID != 0) {
@@ -84,9 +108,16 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
             })
             Platform.runLater {
                 dialog.close()
+                uiObject?.onScaleChanged()
                 displayName = "動画 $file"
             }
         }
+    }
+
+    override fun onLayoutUpdate() {
+        if(end - start > videoLength)
+            end = start + videoLength
+        uiObject?.onScaleChanged()
     }
 
     override fun onDraw(gl: GL2, mode: DrawMode) {
