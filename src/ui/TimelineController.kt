@@ -1,7 +1,5 @@
 package ui
 
-import annotation.CDroppable
-import annotation.CProperty
 import javafx.application.Platform
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
@@ -18,16 +16,12 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import objects.CitrusObject
-import objects.DrawableObject
 import objects.ObjectManager
-import objects.Shape
 import util.Statics
 import java.net.URL
 import java.util.*
-import java.util.Map.Entry.comparingByValue
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.reflect.full.createInstance
 
 class TimelineController : Initializable {
     @FXML
@@ -130,6 +124,9 @@ class TimelineController : Initializable {
                     }
                     glCanvas.currentObjects.clear()
                     glCanvas.currentFrame = glCanvas.currentFrame
+                }
+                else->{
+                    //Nothing to do
                 }
             }
             it.consume()
@@ -284,7 +281,7 @@ class TimelineController : Initializable {
         }
     }
 
-    fun LayerScrollPane_onMousePressed(mouseEvent: MouseEvent) {
+    fun layerScrollPaneOnMousePressed(mouseEvent: MouseEvent) {
         if (mouseEvent.button != MouseButton.PRIMARY) return
         selectedOrigin = mouseEvent.x
         dragging = true
@@ -295,7 +292,7 @@ class TimelineController : Initializable {
         }
     }
 
-    fun LayerScrollPane_onMouseDragged(mouseEvent: MouseEvent) {
+    fun layerScrollPaneOnMouseDragged(mouseEvent: MouseEvent) {
         if (mouseEvent.button != MouseButton.PRIMARY) return
         if (selectedObjects.isNotEmpty())
             for ((i, o) in selectedObjects.withIndex()) {
@@ -304,42 +301,7 @@ class TimelineController : Initializable {
                         o.layoutX = mouseEvent.x - selectedOffsetX
                         o.onMoved()
 
-
-                        //スナップ実装
-                        val nearest = Statics.project.Layer.flatten().filter {
-                            it != o.cObject && it.start <= o.cObject.end + 5 && o.cObject.start <= it.end + 5
-                        }.minBy {
-                            intArrayOf(
-                                    Math.abs(it.start - o.cObject.end),
-                                    Math.abs(o.cObject.start - it.start),
-                                    Math.abs(it.end - o.cObject.end),
-                                    Math.abs(o.cObject.start - it.end)
-                            ).min() ?: 0
-                        }
-                        if (nearest != null) {
-                            val map: HashMap<Int, Int> = HashMap()
-                            map[0] = Math.abs(nearest.start - o.cObject.end)
-                            map[1] = Math.abs(o.cObject.start - nearest.start)
-                            map[2] = Math.abs(nearest.end - o.cObject.end)
-                            map[3] = Math.abs(o.cObject.start - nearest.end)
-
-                            when (map.filter { it.value <= 4 }.minBy { it.value }?.key) {
-                                0 -> o.layoutX = nearest.start * pixelPerFrame - o.width
-                                1 -> o.layoutX = nearest.start * pixelPerFrame
-                                2 -> o.layoutX = nearest.end * pixelPerFrame - o.width
-                                3 -> o.layoutX = nearest.end * pixelPerFrame
-                            }
-                        }
-                        //スナップ実装終わり
-
-                        //重複防止
-                        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end && o.cObject.start <= it.end }
-                        if (block != null)
-                            o.layoutX = if (Math.abs(block.start - o.cObject.end) < Math.abs(o.cObject.start - block.end))
-                                block.start * pixelPerFrame - o.width
-                            else
-                                block.end * pixelPerFrame
-                        //重複防止終わり
+                        snapObjectOnMove(o)//スナップ処理
 
                         if (layerVBox.children[(mouseEvent.y / layerHeight).toInt()] != o.parent) {
                             val src = (o.parent as Pane)
@@ -354,13 +316,20 @@ class TimelineController : Initializable {
 
                             layerScrollPane.layout()
                         }
-
+                        o.onMoved()
                     }
-                    TimeLineObject.EditMode.IncrementLength ->
+                    TimeLineObject.EditMode.IncrementLength -> {
                         o.prefWidth = mouseEvent.x - o.layoutX
+                        o.onMoved()
+                        snapObjectOnIncrement(o)//スナップ処理
+                        o.onMoved()
+                    }
                     TimeLineObject.EditMode.DecrementLength -> {
                         o.layoutX = mouseEvent.x
                         o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] - selectedOffsetX
+                        o.onMoved()
+                        snapObjectOnDecrement(o)//スナップ処理
+                        o.onMoved()
                     }
                     TimeLineObject.EditMode.None -> {
                         //Nothing to do
@@ -374,7 +343,7 @@ class TimelineController : Initializable {
 
     }
 
-    fun LayerScrollPane_onMouseReleased(mouseEvent: MouseEvent) {
+    fun layerScrollPaneOnMouseReleased(mouseEvent: MouseEvent) {
         if (mouseEvent.button != MouseButton.PRIMARY) return
 
         dragging = false
@@ -392,6 +361,82 @@ class TimelineController : Initializable {
         selectedObjectOldWidth.clear()
     }
 
+    private fun snapObjectOnMove(o: TimeLineObject) {
+        //スナップ実装
+
+        val nearest = Statics.project.Layer.flatten().filter {
+            it != o.cObject && it.start <= o.cObject.end + 5 && o.cObject.start <= it.end + 5//スナップの基準になりうる位置のオブジェクトを絞る
+        }.minBy {
+            intArrayOf(
+                    Math.abs(it.start - o.cObject.end),
+                    Math.abs(o.cObject.start - it.start),
+                    Math.abs(it.end - o.cObject.end),
+                    Math.abs(o.cObject.start - it.end)
+            ).min() ?: 0//スナップしうる４つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
+        }
+        if (nearest != null) {
+            val map: HashMap<Int, Int> = HashMap()
+            map[0] = Math.abs(nearest.start - o.cObject.end)
+            map[1] = Math.abs(o.cObject.start - nearest.start)
+            map[2] = Math.abs(nearest.end - o.cObject.end)
+            map[3] = Math.abs(o.cObject.start - nearest.end)
+
+            when (map.filter { it.value <= 4 }.minBy { it.value }?.key) {//４つのスナップ位置の中で最も近い位置へ移動
+                0 -> o.layoutX = nearest.start * pixelPerFrame - o.width
+                1 -> o.layoutX = nearest.start * pixelPerFrame
+                2 -> o.layoutX = nearest.end * pixelPerFrame - o.width
+                3 -> o.layoutX = nearest.end * pixelPerFrame
+            }
+        }
+        //スナップ実装終わり
+
+        //重複防止
+        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end && o.cObject.start <= it.end }//重複する当たり判定を行う
+        if (block != null)
+            o.layoutX = if (Math.abs(block.start - o.cObject.end) < Math.abs(o.cObject.start - block.end))
+                block.start * pixelPerFrame - o.width
+            else
+                block.end * pixelPerFrame
+        //重複防止終わり
+    }
+
+    private fun snapObjectOnIncrement(o: TimeLineObject) {
+        val nearest = Statics.project.Layer.flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.end && o.cObject.end <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
+                .minBy { Math.min(Math.abs(it.start - o.cObject.end), Math.abs(it.end - o.cObject.end)) }//スナップしうる２つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
+        if (nearest != null && Math.min(Math.abs(nearest.start - o.cObject.end), Math.abs(nearest.end - o.cObject.end)) < 5) {
+            o.prefWidth = if (Math.abs(nearest.start - o.cObject.end) < Math.abs(nearest.end - o.cObject.end))
+                (nearest.start - o.cObject.start) * pixelPerFrame
+            else
+                (nearest.end - o.cObject.start) * pixelPerFrame
+
+            println(o.prefWidth)
+        }
+
+        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end }//重複する当たり判定を行う
+        if (block != null)
+            o.prefWidth = (block.start - o.cObject.start) * pixelPerFrame
+
+    }
+
+    private fun snapObjectOnDecrement(o: TimeLineObject) {
+        val right = o.layoutX + o.prefWidth//スナップによる位置ずれを補正するために、あらかしめ右端の座標を記録しておく
+
+        val nearest = Statics.project.Layer.flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.start && o.cObject.start <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
+                .minBy { Math.min(Math.abs(it.start - o.cObject.start), Math.abs(it.end - o.cObject.start)) }//スナップしうる２つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
+
+        if (nearest != null && Math.min(Math.abs(nearest.start - o.cObject.start), Math.abs(nearest.end - o.cObject.start)) < 5) {
+            o.layoutX = if(Math.abs(nearest.start - o.cObject.start)<Math.abs(nearest.end - o.cObject.start))
+                nearest.start * pixelPerFrame
+            else
+                nearest.end * pixelPerFrame
+        }
+
+        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && o.cObject.start <= it.end}//重複する当たり判定を行う
+        if (block != null)
+            o.layoutX = block.end * pixelPerFrame
+
+        o.prefWidth = (right - o.layoutX)//位置ずれを防止
+    }
 
     var playing = false
     fun play() {

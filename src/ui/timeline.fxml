@@ -42,7 +42,7 @@
     <ScrollPane fx:id="layerScrollPane" hbarPolicy="NEVER" GridPane.columnIndex="1" GridPane.rowIndex="3">
         <Pane>
 
-            <VBox fx:id="layerVBox"  onMousePressed="#LayerScrollPane_onMousePressed" onMouseDragged="#LayerScrollPane_onMouseDragged" onMouseReleased="#LayerScrollPane_onMouseReleased"  />
+            <VBox fx:id="layerVBox" onMousePressed="#layerScrollPaneOnMousePressed" onMouseDragged="#layerScrollPaneOnMouseDragged" onMouseReleased="#layerScrollPaneOnMouseReleased"  />
             <Line fx:id="caret" endY="100.0" stroke="RED" />
 
         </Pane>
