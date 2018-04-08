@@ -6,7 +6,10 @@ import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingNode
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
+import javafx.fxml.FXMLLoader
 import javafx.fxml.Initializable
+import javafx.scene.Parent
+import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -16,6 +19,7 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import javafx.stage.Modality
 import javafx.stage.Stage
 import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import org.bytedeco.javacpp.avcodec
@@ -73,8 +77,12 @@ class Controller : Initializable {
     }
 
     fun onVersionInfo(actionEvent: ActionEvent) {
-
-        Alert(Alert.AlertType.NONE, "Citrus alpha 0.1.0", ButtonType.OK).show()
+        val stage = Stage()
+        stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("about.fxml")))
+        stage.isResizable = false
+        stage.title = "Citrusについて"
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.show()
     }
 
     fun onCodecInfo(actionEvent: ActionEvent) {

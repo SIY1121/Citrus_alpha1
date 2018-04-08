@@ -32,7 +32,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     val file = FileProperty(listOf())
 
     @CProperty("音量", 1)
-    val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 1.0)
+    val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 0.01,1.0)
 
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
@@ -110,6 +110,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     }
 
     override fun onLayoutUpdate() {
+        if(audioLength==0)return
         if (end - start > audioLength)
             end = start + audioLength
         uiObject?.onScaleChanged()
@@ -130,7 +131,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
                         val s = (buf?.samples?.get(0) as ShortBuffer)
                         val arr = s.toByteArray()
                         audioLine?.write(arr, 0, arr.size)
-                        println(audioLine?.framePosition)
+                        //println(audioLine?.framePosition)
                     }
 
 //                    if (buf?.samples != null) {

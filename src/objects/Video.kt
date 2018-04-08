@@ -46,7 +46,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
 
-    var oldFrame = -100
+    var oldFrame = -1
     var buf: Frame? = null
 
     var textureID: Int = 0
@@ -103,6 +103,9 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGB, grabber?.imageWidth ?: 0, grabber?.imageHeight
                         ?: 0, 0, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, ByteBuffer.allocate((grabber?.imageWidth
                         ?: 0) * (grabber?.imageHeight ?: 0) * 3))
+
+                grabber?.timestamp = 0
+
                 println("allocate ${grabber?.imageWidth}x${grabber?.imageHeight}")
                 false
             })
@@ -115,6 +118,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     }
 
     override fun onLayoutUpdate() {
+        if(videoLength==0)return
         if(end - start > videoLength)
             end = start + videoLength
         uiObject?.onScaleChanged()
@@ -135,7 +139,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 10000
                     TimelineController.wait = false
-                    //buf = grabber?.grabFrame()
+                    buf = grabber?.grabFrame()
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ

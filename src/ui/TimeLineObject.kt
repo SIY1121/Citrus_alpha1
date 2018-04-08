@@ -198,6 +198,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         slider.min = v.min
                         slider.max = v.max
                         slider.value = v.value(1)
+                        slider.tick = v.tick
                         slider.valueProperty.addListener({ _, _, n ->
                             //キーフレームがない場合
                             if (v.keyFrames.size == 0) {

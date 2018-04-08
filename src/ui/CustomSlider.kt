@@ -26,8 +26,9 @@ import java.util.*
 class CustomSlider : Pane() {
 
     val valueProperty = SimpleDoubleProperty()
-    var min = -10000.0
-    var max = 10000.0
+    var min = Double.POSITIVE_INFINITY
+    var max = Double.NEGATIVE_INFINITY
+    var tick = 1.0
     var name = ""
         set(value){
             field = value
@@ -48,6 +49,7 @@ class CustomSlider : Pane() {
     private val grid = GridPane()
     private val nameLabel = Label("x")
     private val valueLabel = Label("0.0")
+    private val percentIndicator = Pane()
     private val robot = Robot()
     private var dragged = false
 
@@ -59,6 +61,7 @@ class CustomSlider : Pane() {
     private val keyPressed = EventHandler<KeyEvent> {
         if (it.code == KeyCode.ENTER) {
             grid.isVisible = true
+            percentIndicator.isVisible = true
             textField.text = ""
             textField.isDisable = true
             valueLabel.text = valueProperty.value.toString()
@@ -67,6 +70,7 @@ class CustomSlider : Pane() {
     private val focusChanged = ChangeListener<Boolean> { _, _, n ->
         if (!n) {
             grid.isVisible = true
+            percentIndicator.isVisible = true
             textField.text = ""
             textField.isDisable = true
             valueLabel.text = valueProperty.value.toString()
@@ -83,8 +87,9 @@ class CustomSlider : Pane() {
             return@EventHandler
         }
         grid.isVisible = false
+        percentIndicator.isVisible = false
         textField.isDisable = false
-        textField.text = valueProperty.value.toString()
+        textField.text =  String.format("%.2f",value)
         textField.requestFocus()
     }
     private val mousePressed = EventHandler<MouseEvent> {
@@ -98,9 +103,9 @@ class CustomSlider : Pane() {
         scene.cursor = Cursor.NONE
         requestFocus()
         when {
-            valueProperty.value + (it.screenX - oldX) > max -> valueProperty.set(max)
-            valueProperty.value + (it.screenX - oldX) < min -> valueProperty.set(min)
-            else -> valueProperty.set(valueProperty.value + (it.screenX - oldX))
+            valueProperty.value + (it.screenX - oldX)*tick > max -> valueProperty.set(max)
+            valueProperty.value + (it.screenX - oldX)*tick < min -> valueProperty.set(min)
+            else -> valueProperty.set(valueProperty.value + (it.screenX - oldX)*tick)
         }
 
         textField.style = "-fx-background-color:#cecece"
@@ -123,7 +128,6 @@ class CustomSlider : Pane() {
         }
     }
     private val mouseEntered = EventHandler<MouseEvent> {
-        println("enter")
         requestFocus()
         scene.setOnKeyPressed {
             keyPressedOnHoverListener?.onKeyPressed(it)
@@ -149,6 +153,10 @@ class CustomSlider : Pane() {
         textField.prefHeightProperty().bind(heightProperty())
         textField.isDisable = true
         children.add(textField)
+
+        percentIndicator.style = "-fx-background-color:#444444;-fx-background-radius:3;"
+
+        children.add(percentIndicator)
 
         grid.prefWidthProperty().bind(widthProperty())
         grid.prefHeightProperty().bind(heightProperty())
@@ -180,7 +188,18 @@ class CustomSlider : Pane() {
         grid.onKeyPressed = keyPressedPane
 
         valueProperty.addListener({ _, _, n ->
-            valueLabel.text = n.toString()
+            valueLabel.text = String.format("%.2f",n.toDouble())
         })
+        valueProperty.addListener({_,_,n->
+            if(max!=Double.POSITIVE_INFINITY && min!=Double.NEGATIVE_INFINITY)
+                percentIndicator.prefWidth = n.toDouble()/(max-min)*width -2.0
+        })
+        widthProperty().addListener { _,_,n->
+            if(max!=Double.POSITIVE_INFINITY && min!=Double.NEGATIVE_INFINITY)
+            percentIndicator.prefWidth = value/(max-min)*n.toDouble() - 2.0
+        }
+        percentIndicator.prefHeightProperty().bind(heightProperty().subtract(2.0))
+        percentIndicator.layoutY = 1.0
+        percentIndicator.layoutX = 1.0
     }
 }

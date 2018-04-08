@@ -5,7 +5,7 @@ import interpolation.Interpolator
 /**
  * キーフレームを持つプロパティ
  */
-class MutableProperty(var min: Double = -1000.0, var max: Double = 1000.0, var prefMin: Double = 100.0, var prefMax: Double = 100.0, def : Double = 0.0) {
+class MutableProperty(var min: Double = Double.NEGATIVE_INFINITY, var max: Double = Double.POSITIVE_INFINITY, var prefMin: Double = 100.0, var prefMax: Double = 100.0,var tick : Double = 1.0 ,def : Double = 0.0) {
     /**
      * キーフレームのデータクラス
      */

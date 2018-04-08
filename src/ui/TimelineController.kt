@@ -57,7 +57,11 @@ class TimelineController : Initializable {
         var wait = false
             set(value) {
                 field = value
-                instance.timelineRootPane.isDisable = field
+                Platform.runLater {
+                    instance.timelineRootPane.isDisable = field
+                    if(!field)
+                        instance.layerScrollPane.requestFocus()
+                }
             }
         var pixelPerFrame = 2.0
     }
@@ -77,7 +81,7 @@ class TimelineController : Initializable {
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         instance = this
-        SplashController.notifyProgress(0.3, "UIを初期化中...")
+        SplashController.notifyProgress(0.5, "UIを初期化中...")
 
         labelScrollPane.vvalueProperty().bindBidirectional(layerScrollPane.vvalueProperty())
         timelineRootPane.widthProperty().addListener({ _, _, n ->
@@ -448,6 +452,8 @@ class TimelineController : Initializable {
                 glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
                 Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
                 Thread.sleep((1.0 / Statics.project.fps * 1000.0 - 2.0).toLong())
+                while (wait)
+                    Thread.sleep(50)
             }
         }).start()
     }
