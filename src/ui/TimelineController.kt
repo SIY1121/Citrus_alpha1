@@ -14,6 +14,8 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
+import javafx.scene.shape.Polygon
+import javafx.scene.shape.Rectangle
 import javafx.scene.text.Font
 import objects.CitrusObject
 import objects.ObjectManager
@@ -44,10 +46,49 @@ class TimelineController : Initializable {
     lateinit var hScrollBar: ScrollBar
     @FXML
     lateinit var sceneChoiceBox: ChoiceBox<String>
+    @FXML
+    lateinit var topCaret: Line
+    @FXML
+    lateinit var polygonCaret: Polygon
+    @FXML
+    lateinit var timelineAxisClipRectangle: Rectangle
 
     lateinit var glCanvas: GlCanvas
 
-    lateinit var parentController: Controller
+
+    var parentController: Controller = Controller()
+        set(value) {
+            field = value
+
+            parentController.rootPane.setOnKeyPressed {
+                when (it.code) {
+                    KeyCode.SPACE -> {
+                        if (!playing) play()
+                        else stop()
+                    }
+                    KeyCode.RIGHT -> {
+                        glCanvas.currentFrame++
+                        caret.layoutX = glCanvas.currentFrame * pixelPerFrame
+                    }
+                    KeyCode.LEFT -> {
+                        glCanvas.currentFrame--
+                        caret.layoutX = glCanvas.currentFrame * pixelPerFrame
+                    }
+                    KeyCode.DELETE -> {
+                        allTimelineObjects.filter { it.strictSelected }.forEach {
+                            it.onDelete()
+                            allTimelineObjects.remove(it)
+                        }
+                        glCanvas.currentObjects.clear()
+                        glCanvas.currentFrame = glCanvas.currentFrame
+                    }
+                    else -> {
+                        //Nothing to do
+                    }
+                }
+                it.consume()
+            }
+        }
 
     var layerCount = 0
     val layerHeight = 30.0
@@ -59,7 +100,7 @@ class TimelineController : Initializable {
                 field = value
                 Platform.runLater {
                     instance.timelineRootPane.isDisable = field
-                    if(!field)
+                    if (!field)
                         instance.layerScrollPane.requestFocus()
                 }
             }
@@ -91,6 +132,7 @@ class TimelineController : Initializable {
         scaleSlider.valueProperty().addListener({ _, _, n ->
             pixelPerFrame = n.toDouble()
             tick = Statics.project.fps * (1.0 / pixelPerFrame)
+            //tick = 1.0 / pixelPerFrame
             for (pane in layerVBox.children)
                 if (pane is Pane)
                     for (o in pane.children) {
@@ -100,13 +142,22 @@ class TimelineController : Initializable {
             drawAxis()
         })
 
+        caret.layoutXProperty().addListener { _, _, n ->
+            topCaret.layoutX = n.toDouble() - offsetX + 1
+        }
+        polygonCaret.layoutXProperty().bind(topCaret.layoutXProperty())
+
         hScrollBar.minProperty().bind(layerScrollPane.hminProperty())
         hScrollBar.maxProperty().bind(layerScrollPane.hmaxProperty())
         layerScrollPane.hvalueProperty().bindBidirectional(hScrollBar.valueProperty())
 
         layerScrollPane.hvalueProperty().addListener({ _, _, n ->
             drawAxis()
+            topCaret.layoutX = caret.layoutX - offsetX + 1
         })
+        timelineAxisClipRectangle.widthProperty().bind(timelineAxis.widthProperty())
+
+
         layerScrollPane.setOnKeyPressed {
             when (it.code) {
                 KeyCode.SPACE -> {
@@ -129,13 +180,12 @@ class TimelineController : Initializable {
                     glCanvas.currentObjects.clear()
                     glCanvas.currentFrame = glCanvas.currentFrame
                 }
-                else->{
+                else -> {
                     //Nothing to do
                 }
             }
             it.consume()
         }
-
 
         sceneChoiceBox.items.addAll(arrayOf("Root", "Scene1", "Scene2", "Scene3"))
 
@@ -148,6 +198,11 @@ class TimelineController : Initializable {
 
         caret.layoutXProperty().addListener({ _, _, n ->
             glCanvas.currentFrame = (n.toDouble() / pixelPerFrame).toInt()
+            if (topCaret.layoutX >= timelineAxis.width)
+                if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
+                else layerScrollPane.hvalue += 0.05
+            else if (topCaret.layoutX < 0)
+                layerScrollPane.hvalue -= 0.05
         })
     }
 
@@ -277,11 +332,16 @@ class TimelineController : Initializable {
         g.clearRect(0.0, 0.0, g.canvas.width, g.canvas.height)
         g.fill = Color.WHITE
         g.stroke = Color.WHITE
-        g.font = Font(10.0)
-        for (i in 0..20) {
+        g.font = Font(13.0)
+
+        for (i in (offsetX / (tick * pixelPerFrame)).toInt()..((timelineAxis.width / (tick * pixelPerFrame)).toInt() + (offsetX / (tick * pixelPerFrame)).toInt() + 1)) {
             val x = i * tick * pixelPerFrame - offsetX
-            g.fillText("${i * tick / Statics.project.fps}s", x, 20.0)
-            g.strokeLine(x, 20.0, x, 35.0)
+            if (i % 6 == 0){
+                g.fillText("${(i * tick / Statics.project.fps).toTimeString()}s", x, 20.0)
+                g.strokeLine(x, 20.0, x, 35.0)
+            }else{
+                g.strokeLine(x, 25.0, x, 35.0)
+            }
         }
     }
 
@@ -429,13 +489,13 @@ class TimelineController : Initializable {
                 .minBy { Math.min(Math.abs(it.start - o.cObject.start), Math.abs(it.end - o.cObject.start)) }//スナップしうる２つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
 
         if (nearest != null && Math.min(Math.abs(nearest.start - o.cObject.start), Math.abs(nearest.end - o.cObject.start)) < 5) {
-            o.layoutX = if(Math.abs(nearest.start - o.cObject.start)<Math.abs(nearest.end - o.cObject.start))
+            o.layoutX = if (Math.abs(nearest.start - o.cObject.start) < Math.abs(nearest.end - o.cObject.start))
                 nearest.start * pixelPerFrame
             else
                 nearest.end * pixelPerFrame
         }
 
-        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && o.cObject.start <= it.end}//重複する当たり判定を行う
+        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && o.cObject.start <= it.end }//重複する当たり判定を行う
         if (block != null)
             o.layoutX = block.end * pixelPerFrame
 
@@ -460,6 +520,30 @@ class TimelineController : Initializable {
 
     fun stop() {
         playing = false
+    }
+
+    fun topPaneOnMousePressed(mouseEvent: MouseEvent) {
+        topCaret.layoutX = mouseEvent.x
+        caret.layoutX = mouseEvent.x + offsetX - 1
+    }
+
+    fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {
+        topCaret.layoutX = mouseEvent.x
+        caret.layoutX = mouseEvent.x + offsetX - 1
+    }
+
+    fun topPaneOnMouseReleased(mouseEvent: MouseEvent) {
+        topCaret.layoutX = mouseEvent.x
+        caret.layoutX = mouseEvent.x + offsetX - 1
+    }
+
+    fun Double.toTimeString() = this.toInt().toTimeString()
+
+    fun Int.toTimeString(): String {
+        val HH = this / 3600
+        val mm = this / 60
+        val ss = this % 60
+        return "${String.format("%02d", HH)}:${String.format("%02d", mm)}:${String.format("%02d", ss)}"
     }
 
 }
