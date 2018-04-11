@@ -92,6 +92,7 @@ class TimelineController : Initializable {
 
     var layerCount = 0
     val layerHeight = 30.0
+    val defaultObjectLength = 5.0
 
     companion object {
         lateinit var instance: TimelineController
@@ -241,7 +242,7 @@ class TimelineController : Initializable {
             val childMenu = MenuItem(obj.key)
 
             childMenu.setOnAction {
-                addObject(obj.value, thisLayer, null)
+                addObject(obj.value, thisLayer)
             }
             menuObject.items.add(childMenu)
             layerPane.setOnMouseClicked {
@@ -292,14 +293,22 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun addObject(clazz: Class<*>, layerIndex: Int, file: String?) {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start : Int? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
         val cObject = (clazz.newInstance() as CitrusObject)
         cObject.layer = layerIndex
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:red;"
-        o.prefWidth = 200.0
+
+        if(start==null)
+            cObject.start = glCanvas.currentFrame
+        else
+            cObject.start = start
+
+        cObject.end = (cObject.start + defaultObjectLength * Statics.project.fps).toInt()
+        //o.prefWidth = 200.0
+        o.onScaleChanged()
         o.setOnMousePressed {
             allTimelineObjects.forEach {
                 it.style = "-fx-background-color:red;"
@@ -325,6 +334,8 @@ class TimelineController : Initializable {
         layerPane.children.add(o)
         layerScrollPane.layout()
         if (file != null) cObject.onFileDropped(file)
+        glCanvas.currentObjects.clear()
+        glCanvas.currentFrame = glCanvas.currentFrame
     }
 
     private fun drawAxis() {

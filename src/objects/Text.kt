@@ -4,6 +4,7 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
+import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.effect.DropShadow
 import javafx.scene.image.PixelFormat
@@ -92,7 +93,7 @@ class Text : DrawableObject(){
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
-
+            Platform.runLater { UpdateTexture() }
             false
         })
     }
