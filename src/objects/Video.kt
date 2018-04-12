@@ -24,6 +24,7 @@ import properties.FileProperty
 import properties.SwitchableProperty
 import ui.DialogFactory
 import ui.TimelineController
+import util.FFmpegFrameGrabberMod
 import util.SerializedOperationQueue
 import java.io.*
 import java.nio.ShortBuffer
@@ -80,7 +81,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 }
                 return@launch
             }
-            isGrabberStarted = true
+
             videoLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
             end = start + videoLength
@@ -113,6 +114,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 dialog.close()
                 uiObject?.onScaleChanged()
                 displayName = "動画 $file"
+                isGrabberStarted = true
             }
         }
     }
@@ -145,6 +147,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
                 while (grabber?.timestamp ?: 0 <= now) {
                     buf = grabber?.grabImage()
+                    println(buf?.timestamp)
                 }
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight
                         ?: 0, GL.GL_BGR, GL2.GL_UNSIGNED_BYTE, buf?.image?.get(0))
