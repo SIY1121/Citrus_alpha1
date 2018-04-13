@@ -132,6 +132,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         label.maxWidthProperty().bind(widthProperty())
         label.minHeight = 30.0
+        label.effect = DropShadow()
         children.add(label)
 
         popupRoot = VBox()

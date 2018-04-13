@@ -7,8 +7,16 @@ import com.jogamp.openal.AL
 import com.jogamp.openal.ALFactory
 import com.jogamp.openal.util.ALut
 import javafx.application.Platform
+import javafx.geometry.Side
+import javafx.scene.SnapshotParameters
+import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
+import javafx.scene.image.Image
+import javafx.scene.image.PixelFormat
+import javafx.scene.image.WritableImage
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
@@ -33,7 +41,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     val file = FileProperty(listOf())
 
     @CProperty("音量", 1)
-    val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 0.01,1.0)
+    val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 0.01, 1.0)
 
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
@@ -44,6 +52,12 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     var buf: Frame? = null
 
     var audioLength = 0
+
+    //波形レンダリング用キャンバス
+    val waveFormCanvas = Canvas()
+    var waveFormImage: WritableImage? = null
+
+    val resolution = 0.02
 
     //val al: AL
     //val bufCount = 2
@@ -77,7 +91,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     override fun onChanged(file: String) {
         val dialog = DialogFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
-        launch{
+        launch {
             grabber = FFmpegFrameGrabber(file)
             grabber?.start()
             if (grabber?.videoCodec == 0) {
@@ -89,6 +103,9 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
                 }
                 return@launch
             }
+
+            renderWaveForm()
+
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
             end = start + audioLength
@@ -111,9 +128,13 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     }
 
     override fun onLayoutUpdate() {
-        if(audioLength==0)return
+        if (audioLength == 0) return
         if (end - start > audioLength)
             end = start + audioLength
+
+        uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, false, Side.BOTTOM, 0.0, false), BackgroundSize(audioLength.toDouble() / (end - start), 1.0, true, true, false, false)))
+
+
         uiObject?.onScaleChanged()
     }
 
@@ -122,15 +143,14 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
             if (oldFrame != frame) {
                 val now = ((frame + 5) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
 
-                if (Math.abs(frame - oldFrame) > 30){
+                if (Math.abs(frame - oldFrame) > 30) {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 1000
                     TimelineController.wait = false
                     buf = grabber?.grabSamples()
                 }
 
-                while (grabber?.timestamp ?: 0 <= now && buf!=null) {
-                    println(grabber?.timestamp ?: 0 <= now && buf!=null)
+                while (grabber?.timestamp ?: 0 <= now && buf != null) {
                     // println("a:" + grabber?.timestamp + " ")
                     if (buf?.samples != null) {
 
@@ -191,4 +211,48 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
         return byteBuffer.array()
     }
 
+    private fun renderWaveForm() {
+
+        waveFormCanvas.height = 30.0
+        waveFormCanvas.width = (grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution
+
+        var buffer = grabber?.grabSamples()
+        val g = waveFormCanvas.graphicsContext2D
+        g.fill = Color.WHITE
+        var blockCount = 0
+        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
+                ?: 2) * resolution).toInt())
+        var read = 0
+        while (buffer != null) {
+            val s = (buffer.samples?.get(0) as ShortBuffer)
+            while (s.remaining() > 0) {
+                if (shortArray.size - read == 0) {
+                    //val level = Math.max(Math.log10(shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()) + 60,0.0)/60.0
+                    val level = (shortArray.map { Math.abs(it.toInt()) }.max()?:0) / Short.MAX_VALUE.toDouble()
+                    g.fillRect(blockCount.toDouble(), (1 - level) * g.canvas.height, 1.0, level * g.canvas.height)
+                    read = 0
+                    //println("block $blockCount")
+                    blockCount++
+                }
+                val old = s.position()
+                if (shortArray.size - read > s.remaining())
+                    s.get(shortArray, read, s.remaining())
+                else
+                    s.get(shortArray, read, shortArray.size - read)
+
+                read += (s.position() - old)
+            }
+            buffer = grabber?.grabSamples()
+        }
+        println("${waveFormCanvas.width}x${waveFormCanvas.height}")
+        Platform.runLater {
+            waveFormImage = WritableImage(waveFormCanvas.width.toInt(), waveFormCanvas.height.toInt())
+            val params = SnapshotParameters()
+            params.fill = Color.TRANSPARENT
+            waveFormCanvas.snapshot(params, waveFormImage)
+            uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, true, Side.BOTTOM, 0.0, true), BackgroundSize(1.0, 1.0, true, true, false, false)))
+        }
+
+
+    }
 }
