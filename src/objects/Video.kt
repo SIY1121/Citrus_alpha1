@@ -47,7 +47,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
 
-    var oldFrame = -1
+    var oldFrame = -100
     var buf: Frame? = null
 
     var textureID: Int = 0
@@ -105,7 +105,6 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                         ?: 0, 0, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, ByteBuffer.allocate((grabber?.imageWidth
                         ?: 0) * (grabber?.imageHeight ?: 0) * 3))
 
-                grabber?.timestamp = 0
 
                 println("allocate ${grabber?.imageWidth}x${grabber?.imageHeight}")
                 false
@@ -139,15 +138,14 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
                 //移動距離が30フレーム以上でシーク処理を実行
                 if (Math.abs(frame - oldFrame) > 30 || frame < oldFrame) {
                     TimelineController.wait = true
-                    grabber?.timestamp = now - 10000
+                    grabber?.timestamp = Math.max(now - 10000,0)
                     TimelineController.wait = false
                     buf = grabber?.grabFrame()
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
-                while (grabber?.timestamp ?: 0 <= now) {
+                while (grabber?.timestamp ?: 0 <= now && buf!=null) {
                     buf = grabber?.grabImage()
-                    println(buf?.timestamp)
                 }
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight
                         ?: 0, GL.GL_BGR, GL2.GL_UNSIGNED_BYTE, buf?.image?.get(0))

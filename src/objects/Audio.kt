@@ -15,6 +15,7 @@ import org.bytedeco.javacv.Frame
 import properties.FileProperty
 import properties.MutableProperty
 import ui.DialogFactory
+import ui.TimelineController
 import util.Statics
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -121,10 +122,15 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
             if (oldFrame != frame) {
                 val now = ((frame + 5) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
 
-                if (Math.abs(frame - oldFrame) > 30)
-                    grabber?.timestamp = now
+                if (Math.abs(frame - oldFrame) > 30){
+                    TimelineController.wait = true
+                    grabber?.timestamp = now - 1000
+                    TimelineController.wait = false
+                    buf = grabber?.grabSamples()
+                }
 
-                while (grabber?.timestamp ?: 0 <= now) {
+                while (grabber?.timestamp ?: 0 <= now && buf!=null) {
+                    println(grabber?.timestamp ?: 0 <= now && buf!=null)
                     // println("a:" + grabber?.timestamp + " ")
                     if (buf?.samples != null) {
 
@@ -184,4 +190,5 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
         byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value(frame)).toShort() }.toShortArray())
         return byteBuffer.array()
     }
+
 }
