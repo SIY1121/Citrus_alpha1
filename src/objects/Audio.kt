@@ -3,42 +3,37 @@ package objects
 import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
-import com.jogamp.openal.AL
-import com.jogamp.openal.ALFactory
-import com.jogamp.openal.util.ALut
 import javafx.application.Platform
-import javafx.geometry.Side
-import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
-import javafx.scene.image.Image
-import javafx.scene.image.PixelFormat
-import javafx.scene.image.WritableImage
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.shape.Rectangle
+import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import properties.FileProperty
 import properties.MutableProperty
 import ui.DialogFactory
+import ui.TimeLineObject
 import ui.TimelineController
 import util.Statics
+import java.io.File
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
 import javax.sound.sampled.SourceDataLine
 
-@CObject("音声")
+@CObject("音声", "388E3CFF", "/assets/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
 class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     @CProperty("ファイル", 0)
-    val file = FileProperty(listOf())
+    val file = FileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
     @CProperty("音量", 1)
     val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 0.01, 1.0)
@@ -53,11 +48,14 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     var audioLength = 0
 
-    //波形レンダリング用キャンバス
-    val waveFormCanvas = Canvas()
-    var waveFormImage: WritableImage? = null
+    val hBox = HBox()
 
-    val resolution = 0.02
+    //波形レンダリング用キャンバス
+    var waveFormCanvases: Array<Canvas> = Array(1, { _ -> Canvas() })
+    val resolution = 0.015
+    val canvasSize = 4096
+
+    val rect = Rectangle(100.0, 30.0)
 
     //val al: AL
     //val bufCount = 2
@@ -121,21 +119,29 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
             Platform.runLater {
                 uiObject?.onScaleChanged()
                 dialog.close()
-                displayName = "音声 $file"
+                displayName = "[音声] ${File(file).name}"
             }
         }
 
     }
 
-    override fun onLayoutUpdate() {
+    override fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
         if (audioLength == 0) return
         if (end - start > audioLength)
             end = start + audioLength
 
-        uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, false, Side.BOTTOM, 0.0, false), BackgroundSize(audioLength.toDouble() / (end - start), 1.0, true, true, false, false)))
+        //uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, false, Side.BOTTOM, 0.0, false), BackgroundSize(audioLength.toDouble() / (end - start), 1.0, true, true, false, false)))
 
 
         uiObject?.onScaleChanged()
+    }
+
+    override fun onScaleUpdate() {
+        //waveFormCanvas.scaleX = (end - start) * TimelineController.pixelPerFrame /waveFormCanvas.width
+        //waveFormCanvas.translateX = -(1-waveFormCanvas.scaleX)*waveFormCanvas.width/2.0
+        //println(waveFormCanvas.scaleX)
+        hBox.scaleX = (audioLength) * TimelineController.pixelPerFrame / hBox.width
+        hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
     }
 
     override fun onFrame() {
@@ -213,26 +219,46 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     private fun renderWaveForm() {
 
-        waveFormCanvas.height = 30.0
-        waveFormCanvas.width = (grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution
+        //waveFormCanvas.height = 30.0
+        //waveFormCanvas.width = (grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution
+        //waveFormData = ShortArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
+
+
+        waveFormCanvases = Array(((grabber?.lengthInTime
+                ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
+        waveFormCanvases[0] = Canvas(canvasSize.toDouble(), 30.0)
+        var g = waveFormCanvases[0].graphicsContext2D
+        //g.fill = LinearGradient(0.0, 0.0, 0.0, 30.0, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.WHITE), Stop(1.0, Color.GRAY))
 
         var buffer = grabber?.grabSamples()
-        val g = waveFormCanvas.graphicsContext2D
-        g.fill = Color.WHITE
         var blockCount = 0
         val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
                 ?: 2) * resolution).toInt())
         var read = 0
+        var canvasCount = 0
         while (buffer != null) {
             val s = (buffer.samples?.get(0) as ShortBuffer)
             while (s.remaining() > 0) {
                 if (shortArray.size - read == 0) {
                     //val level = Math.max(Math.log10(shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()) + 60,0.0)/60.0
-                    val level = (shortArray.map { Math.abs(it.toInt()) }.max()?:0) / Short.MAX_VALUE.toDouble()
-                    g.fillRect(blockCount.toDouble(), (1 - level) * g.canvas.height, 1.0, level * g.canvas.height)
+                    val maxLevel = (shortArray.map { Math.abs(it.toInt()) }.max() ?: 0) / Short.MAX_VALUE.toDouble()
+                    val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
+                    //g.fillRect(blockCount.toDouble(), (1 - level) * g.canvas.height, 1.0, level * g.canvas.height)
+                    g.fill = Color.WHITE
+                    g.fillRect(blockCount.toDouble(), (1 - maxLevel) * g.canvas.height, 1.0, maxLevel * g.canvas.height)
+                    g.fill = Color.LIGHTGRAY
+                    g.fillRect(blockCount.toDouble(), (1 - averageLevel) * g.canvas.height, 1.0, averageLevel * g.canvas.height)
                     read = 0
                     //println("block $blockCount")
                     blockCount++
+                    if (blockCount == canvasSize) {
+                        waveFormCanvases[canvasCount].width = canvasSize.toDouble()
+                        canvasCount++
+                        blockCount = 0
+                        waveFormCanvases[canvasCount] = Canvas(canvasSize.toDouble(), 30.0)
+                        g = waveFormCanvases[canvasCount].graphicsContext2D
+                        //g.fill =  LinearGradient(0.0, 0.0, 0.0, 30.0, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.WHITE), Stop(1.0, Color.GRAY))
+                    }
                 }
                 val old = s.position()
                 if (shortArray.size - read > s.remaining())
@@ -244,13 +270,23 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
             }
             buffer = grabber?.grabSamples()
         }
-        println("${waveFormCanvas.width}x${waveFormCanvas.height}")
+        waveFormCanvases[canvasCount].width = blockCount.toDouble()
+
+
         Platform.runLater {
-            waveFormImage = WritableImage(waveFormCanvas.width.toInt(), waveFormCanvas.height.toInt())
-            val params = SnapshotParameters()
-            params.fill = Color.TRANSPARENT
-            waveFormCanvas.snapshot(params, waveFormImage)
-            uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, true, Side.BOTTOM, 0.0, true), BackgroundSize(1.0, 1.0, true, true, false, false)))
+            //            waveFormImage = WritableImage(waveFormCanvas.width.toInt(), waveFormCanvas.height.toInt())
+//            val params = SnapshotParameters()
+//            params.fill = Color.TRANSPARENT
+//            waveFormCanvas.snapshot(params, waveFormImage)
+//            uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, true, Side.BOTTOM, 0.0, true), BackgroundSize(1.0, 1.0, true, true, false, false)))
+            //waveFormCanvas.style = "-fx-background-color:blue"
+            uiObject?.widthProperty()?.addListener({ _, _, n ->
+                rect.width = n.toDouble() / hBox.scaleX
+            })
+            uiObject?.headerPane?.children?.add(0, hBox)
+            hBox.clip = rect
+            hBox.children.addAll(waveFormCanvases)
+
         }
 
 

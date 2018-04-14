@@ -86,7 +86,6 @@ class TimelineController : Initializable {
                         //Nothing to do
                     }
                 }
-                it.consume()
             }
         }
 
@@ -293,15 +292,15 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start : Int? = null) {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
         val cObject = (clazz.newInstance() as CitrusObject)
         cObject.layer = layerIndex
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
-        o.style = "-fx-background-color:red;"
+        o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"
 
-        if(start==null)
+        if (start == null)
             cObject.start = glCanvas.currentFrame
         else
             cObject.start = start
@@ -311,10 +310,11 @@ class TimelineController : Initializable {
         o.onScaleChanged()
         o.setOnMousePressed {
             allTimelineObjects.forEach {
-                it.style = "-fx-background-color:red;"
+                it.style = "-fx-background-color:#${it.color.darker().toString().substring(2)};"
                 it.strictSelected = false
             }
-            o.style = "-fx-background-color:orange;"
+            o.style = "-fx-background-color:#${o.color.toString().substring(2)};"
+            println(o.style)
             o.strictSelected = true
             selectedObjects.add(o)
             selectedObjectOldWidth.add(o.width)
@@ -347,10 +347,10 @@ class TimelineController : Initializable {
 
         for (i in (offsetX / (tick * pixelPerFrame)).toInt()..((timelineAxis.width / (tick * pixelPerFrame)).toInt() + (offsetX / (tick * pixelPerFrame)).toInt() + 1)) {
             val x = i * tick * pixelPerFrame - offsetX
-            if (i % 6 == 0){
+            if (i % 6 == 0) {
                 g.fillText("${(i * tick / Statics.project.fps).toTimeString()}s", x, 20.0)
                 g.strokeLine(x, 20.0, x, 35.0)
-            }else{
+            } else {
                 g.strokeLine(x, 25.0, x, 35.0)
             }
         }
@@ -374,7 +374,7 @@ class TimelineController : Initializable {
                 when (editMode) {
                     TimeLineObject.EditMode.Move -> {
                         o.layoutX = mouseEvent.x - selectedOffsetX
-                        o.onMoved()
+                        o.onMoved(editMode)
 
                         snapObjectOnMove(o)//スナップ処理
 
@@ -391,20 +391,20 @@ class TimelineController : Initializable {
 
                             layerScrollPane.layout()
                         }
-                        o.onMoved()
+                        o.onMoved(editMode)
                     }
                     TimeLineObject.EditMode.IncrementLength -> {
                         o.prefWidth = mouseEvent.x - o.layoutX
-                        o.onMoved()
+                        o.onMoved(editMode)
                         snapObjectOnIncrement(o)//スナップ処理
-                        o.onMoved()
+                        o.onMoved(editMode)
                     }
                     TimeLineObject.EditMode.DecrementLength -> {
                         o.layoutX = mouseEvent.x
                         o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] - selectedOffsetX
-                        o.onMoved()
+                        o.onMoved(editMode)
                         snapObjectOnDecrement(o)//スナップ処理
-                        o.onMoved()
+                        o.onMoved(editMode)
                     }
                     TimeLineObject.EditMode.None -> {
                         //Nothing to do
@@ -424,7 +424,7 @@ class TimelineController : Initializable {
         dragging = false
 
         for (o in selectedObjects)
-            o.onMoved()
+            o.onMoved(editMode)
 
         if (selectedObjects.isNotEmpty()) {
             glCanvas.currentObjects.clear()

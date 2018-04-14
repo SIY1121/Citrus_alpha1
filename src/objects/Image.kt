@@ -1,5 +1,6 @@
 package objects
 
+import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL
@@ -11,7 +12,8 @@ import properties.FileProperty
 import ui.GlCanvas
 import java.io.File
 
-@CObject("画像")
+@CObject("画像","00796BFF","/assets/ic_photo.png")
+@CDroppable(["png","jpg","jpeg","bmp","gif","tif"])
 class Image : DrawableObject(), FileProperty.ChangeListener {
 
 
@@ -20,7 +22,7 @@ class Image : DrawableObject(), FileProperty.ChangeListener {
 
     @CProperty("ファイル",0)
     val file = FileProperty(listOf(
-            FileChooser.ExtensionFilter("画像ファイル", "*.png","*.jpg","*.bmp","*.gif")
+            FileChooser.ExtensionFilter("画像ファイル", "*.png","*.jpg",".*jpeg","*.bmp","*.gif","*.tif")
     ))
 
     var texture :Texture? = null
@@ -29,7 +31,12 @@ class Image : DrawableObject(), FileProperty.ChangeListener {
         file.listener = this
     }
 
+    override fun onFileDropped(file: String) {
+        onChanged(file)
+    }
+
     override fun onChanged(file: String) {
+        displayName = "[画像] ${File(file).name}"
         GlCanvas.instance.invoke(false,{
             texture = TextureIO.newTexture(File(file),false)
             texture?.enable(it.gl)

@@ -18,7 +18,7 @@ import java.awt.GraphicsEnvironment
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
-@CObject("テキスト")
+@CObject("テキスト","1976D2FF","/assets/ic_text.png")
 class Text : DrawableObject(){
     override val id = "citrus/text"
     override val name = "テキスト"

@@ -8,8 +8,11 @@ import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.animation.Timeline
 import javafx.application.Platform
+import javafx.beans.property.DoubleProperty
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
+import javafx.stage.FileChooser
 import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -21,8 +24,10 @@ import util.Statics
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import properties.FileProperty
+import properties.MutableProperty
 import properties.SwitchableProperty
 import ui.DialogFactory
+import ui.TimeLineObject
 import ui.TimelineController
 import util.FFmpegFrameGrabberMod
 import util.SerializedOperationQueue
@@ -34,7 +39,7 @@ import javax.sound.sampled.DataLine
 import javax.sound.sampled.SourceDataLine
 
 
-@CObject("動画")
+@CObject("動画","F57C00","/assets/ic_movie.png")
 @CDroppable(["asf","wmv","wma","asf","wmv","wma","avi","flv","h261","h263","m4v","m4a","ismv","isma","mkv","mjpg","mjpeg","mp4","mpg","mpeg","mpg","mpeg","m1v","dvd","vob","vob","ts","m2t","m2ts","mts","nut","ogv","webm","chk"])
 class Video : DrawableObject(), FileProperty.ChangeListener {
 
@@ -42,7 +47,10 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
     override val name = "動画"
 
     @CProperty("ファイル", 0)
-    val file = FileProperty(listOf())
+    val file = FileProperty(listOf(FileChooser.ExtensionFilter("動画ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
+
+    @CProperty("開始位置",1)
+    val startPos : DoubleProperty = SimpleDoubleProperty()
 
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
@@ -54,9 +62,10 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
 
     var videoLength = 0
 
+    var oldStart = 0
+
     init {
         file.listener = this
-
     }
 
     override fun onFileDropped(file: String) {
@@ -112,16 +121,22 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
             Platform.runLater {
                 dialog.close()
                 uiObject?.onScaleChanged()
-                displayName = "動画 $file"
+                displayName = "[動画] ${File(file).name}"
                 isGrabberStarted = true
             }
         }
     }
 
-    override fun onLayoutUpdate() {
+    override fun onLayoutUpdate(mode : TimeLineObject.EditMode) {
         if(videoLength==0)return
         if(end - start > videoLength)
             end = start + videoLength
+
+        if(mode==TimeLineObject.EditMode.DecrementLength){
+            val dif = start-oldStart
+
+        }
+
         uiObject?.onScaleChanged()
     }
 

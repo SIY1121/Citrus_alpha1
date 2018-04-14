@@ -11,7 +11,7 @@ package annotation
  * @param index 表示される順番
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class CProperty(val displayName : String,val index : Int)
+annotation class CProperty(val displayName: String, val index: Int)
 
 /**
  * CitrusObject自体に付与するアノテーション
@@ -19,13 +19,13 @@ annotation class CProperty(val displayName : String,val index : Int)
  * @param name 表示名
  */
 @Target(AnnotationTarget.CLASS)
-annotation class CObject(val name:String)
+annotation class CObject(val name: String,val color : String = "757575FF" ,val iconUrl: String = "")
 
 /***
  * キーフレーム補間クラスへの和名設定用
  */
 @Target(AnnotationTarget.CLASS)
-annotation class CInterpolation(val name : String)
+annotation class CInterpolation(val name: String)
 
 /**
  * Citrus Objectでファイルドロップに反応するクラスに対して指定する
@@ -33,4 +33,4 @@ annotation class CInterpolation(val name : String)
  * onFireDroppedが発生する
  */
 @Target(AnnotationTarget.CLASS)
-annotation class CDroppable(val filter : Array<String>)
+annotation class CDroppable(val filter: Array<String>)

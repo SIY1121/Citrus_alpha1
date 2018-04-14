@@ -4,6 +4,7 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import properties.SelectableProperty
+import ui.TimeLineObject
 
 @CObject("図形")
 class Shape : DrawableObject() {
@@ -61,7 +62,7 @@ class Shape : DrawableObject() {
         }
     }
 
-    override fun onLayoutUpdate() {
-        super.onLayoutUpdate()
+    override fun onLayoutUpdate(mode : TimeLineObject.EditMode) {
+        super.onLayoutUpdate(mode)
     }
 }

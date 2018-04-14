@@ -36,7 +36,14 @@ abstract class CitrusObject{
     /**
      * タイムラインで動かされ終わった時に呼び出される
      */
-    open fun onLayoutUpdate() {
+    open fun onLayoutUpdate(mode : TimeLineObject.EditMode) {
+
+    }
+
+    /**
+     * タイムラインのスケールが変更された時に呼び出される
+     */
+    open fun onScaleUpdate(){
 
     }
 

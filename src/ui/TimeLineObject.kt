@@ -15,9 +15,12 @@ import interpolation.InterpolatorManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.Node
+import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.scene.shape.Circle
 import javafx.stage.FileChooser
@@ -50,6 +53,23 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
      * 表示用ラベル
      */
     val label = Label()
+
+    /**
+     * アイコン表示用
+     */
+    val imageView = ImageView()
+
+    /**
+     * ヘッダ類をまとめる親
+     */
+    val headerPane = Pane()
+
+    /**
+     * 表示用のラベル、アイコン等をまとめる親
+     */
+    val infoPane = HBox()
+
+    var color = Color.RED
 
     /**
      * 編集コントロールを表示するウィンドウ
@@ -129,11 +149,39 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         onMouseExited = mouseExited
         onMouseClicked = mouseClicked
 
-
-        label.maxWidthProperty().bind(widthProperty())
         label.minHeight = 30.0
+        //label.textFill = Color.BLACK
         label.effect = DropShadow()
-        children.add(label)
+        val iconUrl = (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).iconUrl
+        if(iconUrl.isNotBlank()){
+            imageView.fitHeight = 30.0
+            imageView.fitWidth = 30.0
+            imageView.isPreserveRatio = true
+            imageView.image = Image(iconUrl)
+            infoPane.children.add(imageView)
+        }
+
+        val color = (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).color
+        this.color = Color.web(color)
+
+        infoPane.children.add(label)
+        infoPane.maxWidthProperty().bind(widthProperty())
+
+        widthProperty().addListener({_,_,n->
+            if(n.toDouble()<50){
+                imageView.isVisible = false
+                label.isVisible = false
+            }else{
+                imageView.isVisible = true
+                label.isVisible = true
+            }
+        })
+
+        headerPane.children.add(infoPane)
+        headerPane.minHeight = 30.0
+        headerPane.maxWidthProperty().bind(widthProperty())
+
+        children.add(headerPane)
 
         popupRoot = VBox()
         popupRoot.style = "-fx-base: #323232;-fx-background-color:#383838AA;-fx-border-radius: 5 5 5 5;-fx-background-radius: 5 5 5 5;"
@@ -221,6 +269,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         //キーフレーム追加用コード
                         slider.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover{
                             override fun onKeyPressed(it: KeyEvent) {
+                                println("key ${it.code}")
                                 if (it.code == KeyCode.I) {
                                     println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
 
@@ -378,13 +427,13 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         cObject.layer = new
     }
 
-    fun onMoved() {
+    fun onMoved(mode : EditMode) {
         cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
         cObject.end = ((layoutX + prefWidth) / TimelineController.pixelPerFrame).toInt()
         //微妙なズレを修正
 //        layoutX = cObject.start * TimelineController.pixelPerFrame
 //        prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
-        cObject.onLayoutUpdate()
+        cObject.onLayoutUpdate(mode)
     }
 
     fun onCaretChanged(frame: Int) {
@@ -422,7 +471,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     }
                 }
             }
-
+        cObject.onScaleUpdate()
     }
 
     fun onDelete(){
