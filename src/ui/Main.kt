@@ -10,6 +10,8 @@ import javafx.application.Platform
 import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
 import javafx.scene.image.Image
 import javafx.stage.Screen
 import javafx.stage.Stage
@@ -21,6 +23,7 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.zip.ZipInputStream
 
 
 class Main : Application() {
@@ -35,6 +38,7 @@ class Main : Application() {
         splash.initStyle(StageStyle.UNDECORATED)
         splash.x = (primScreenBounds.width - 600) / 2
         splash.y = (primScreenBounds.height - 360) / 2
+        splash.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
         splash.show()
         splash.toFront()
 
@@ -42,6 +46,7 @@ class Main : Application() {
         Thread({
             SplashController.notifyProgress(0.1,"オブジェクトを読み込み中...")
             InterpolatorManager.load()
+            SplashController.notifyProgress(0.2,"オブジェクトを読み込み中...")
             ObjectManager.load()
             SplashController.notifyProgress(0.3,"FFmpegを初期化中...")
             FFmpegFrameGrabber.tryLoad()
