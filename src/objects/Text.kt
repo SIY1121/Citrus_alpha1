@@ -84,6 +84,7 @@ class Text : DrawableObject(){
         strokeColor.listener = onColorChanged
         isShadow.listener = onIsStrokeChanged
         shadowColor.listener = onColorChanged
+        displayName = "[テキスト]"
         GlCanvas.instance.invoke(true,{
             val b = IntBuffer.allocate(1)
             it.gl.glGenTextures(1, b)

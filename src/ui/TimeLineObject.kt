@@ -149,6 +149,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         onMouseExited = mouseExited
         onMouseClicked = mouseClicked
 
+        label.text = cObject.displayName
+
         label.minHeight = 30.0
         //label.textFill = Color.BLACK
         label.effect = DropShadow()

@@ -66,6 +66,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     init {
         file.listener = this
+        displayName = "[音声]"
 //        ALut.alutInit()
 //        al = ALFactory.getAL()
 //        println("al error i : " + al.alGetError())

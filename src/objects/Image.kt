@@ -29,6 +29,7 @@ class Image : DrawableObject(), FileProperty.ChangeListener {
 
     init{
         file.listener = this
+        displayName = "[画像]"
     }
 
     override fun onFileDropped(file: String) {

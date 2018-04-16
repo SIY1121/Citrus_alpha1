@@ -522,7 +522,7 @@ class TimelineController : Initializable {
             while (playing) {
                 glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
                 Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
-                Thread.sleep((1.0 / Statics.project.fps * 1000.0 - 2.0).toLong())
+                Thread.sleep((1.0 / Statics.project.fps * 1000.0 - 5.0).toLong())
                 while (wait)
                     Thread.sleep(50)
             }

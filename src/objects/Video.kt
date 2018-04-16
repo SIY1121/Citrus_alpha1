@@ -66,6 +66,7 @@ class Video : DrawableObject(), FileProperty.ChangeListener {
 
     init {
         file.listener = this
+        displayName = "[動画]"
     }
 
     override fun onFileDropped(file: String) {

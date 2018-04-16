@@ -45,6 +45,7 @@ abstract class DrawableObject : CitrusObject() {
         if (mode == DrawMode.Preview && enabledSelectedOutline && selected) {
 
         }
+        gl.glBindTexture(GL2.GL_TEXTURE_2D,0)
     }
 
     override fun onFrame() {
