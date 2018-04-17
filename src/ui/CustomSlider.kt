@@ -26,8 +26,8 @@ import java.util.*
 class CustomSlider : Pane() {
 
     val valueProperty = SimpleDoubleProperty()
-    var min = Double.POSITIVE_INFINITY
-    var max = Double.NEGATIVE_INFINITY
+    var min = Double.NEGATIVE_INFINITY
+    var max = Double.POSITIVE_INFINITY
     var tick = 1.0
     var name = ""
         set(value){

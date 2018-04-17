@@ -14,6 +14,14 @@ package annotation
 annotation class CProperty(val displayName: String, val index: Int)
 
 /**
+ * このアノテーションを付与すると
+ * 右クリック時に表示されるサブメニューに
+ * ミニコントローラーが表示されるようになる
+ */
+@Target(AnnotationTarget.PROPERTY)
+annotation class CQuickProperty(val displayName : String,val index : Int)
+
+/**
  * CitrusObject自体に付与するアノテーション
  * そのオブジェクトの表示名を定義する意図もある
  * @param name 表示名

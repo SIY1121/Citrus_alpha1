@@ -72,14 +72,19 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
     var color = Color.RED
 
     /**
-     * 編集コントロールを表示するウィンドウ
+     * サブメニューポップアップ
      */
     val popup = PopupControl()
 
     /**
-     * ポップアップウィンドウのルート要素
+     * サブメニュールート
      */
-    lateinit var popupRoot: VBox
+    val popupRoot = VBox()
+
+    /**
+     * 編集画面のルート
+     */
+    lateinit var editWindowRoot: VBox
 
     /**
      * セクションのリスト
@@ -122,24 +127,17 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
      * クリック時の動作
      */
     private val mouseClicked = EventHandler<MouseEvent> {
-        //ポップアップモード
-        if (Settings.popupEditWindow) {
-            if (it.button == MouseButton.SECONDARY) {
-                popup.show(this, it.screenX, it.screenY)
+        if (it.button == MouseButton.PRIMARY) {
+            timelineController.parentController.rightPane.children.clear()
+            timelineController.parentController.rightPane.children.add(editWindowRoot)
+            AnchorPane.setRightAnchor(editWindowRoot, 0.0)
+            AnchorPane.setLeftAnchor(editWindowRoot, 0.0)
+        } else if (it.button == MouseButton.SECONDARY) {
 
-            } else {
-                popup.hide()
-            }
+            popup.show(this, it.screenX, it.screenY)
             it.consume()
-        } else {
-            //サイドバーモード
-            if (it.button == MouseButton.PRIMARY) {
-                timelineController.parentController.rightPane.children.clear()
-                timelineController.parentController.rightPane.children.add(popupRoot)
-                AnchorPane.setRightAnchor(popupRoot, 0.0)
-                AnchorPane.setLeftAnchor(popupRoot, 0.0)
-            }
         }
+
     }
 
     init {
@@ -154,8 +152,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         label.minHeight = 30.0
         //label.textFill = Color.BLACK
         label.effect = DropShadow()
-        val iconUrl = (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).iconUrl
-        if(iconUrl.isNotBlank()){
+        val iconUrl = (cObject.javaClass.kotlin.annotations.first { it is CObject } as CObject).iconUrl
+        if (iconUrl.isNotBlank()) {
             imageView.fitHeight = 30.0
             imageView.fitWidth = 30.0
             imageView.isPreserveRatio = true
@@ -163,17 +161,17 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             infoPane.children.add(imageView)
         }
 
-        val color = (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).color
+        val color = (cObject.javaClass.kotlin.annotations.first { it is CObject } as CObject).color
         this.color = Color.web(color)
 
         infoPane.children.add(label)
         infoPane.maxWidthProperty().bind(widthProperty())
 
-        widthProperty().addListener({_,_,n->
-            if(n.toDouble()<50){
+        widthProperty().addListener({ _, _, n ->
+            if (n.toDouble() < 50) {
                 imageView.isVisible = false
                 label.isVisible = false
-            }else{
+            } else {
                 imageView.isVisible = true
                 label.isVisible = true
             }
@@ -185,24 +183,24 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         children.add(headerPane)
 
-        popupRoot = VBox()
-        popupRoot.style = "-fx-base: #323232;-fx-background-color:#383838AA;-fx-border-radius: 5 5 5 5;-fx-background-radius: 5 5 5 5;"
-        popupRoot.effect = DropShadow()
-        popupRoot.padding = Insets(10.0)
+        editWindowRoot = VBox()
+        editWindowRoot.style = "-fx-base: #323232;-fx-background-color:#383838AA;-fx-border-radius: 5 5 5 5;-fx-background-radius: 5 5 5 5;"
+        editWindowRoot.effect = DropShadow()
+        editWindowRoot.padding = Insets(10.0)
 
 
         //cObjectの親クラスをたどり、それぞれのプロパティを取得
-        cObject.javaClass.kotlin.allSuperclasses.reversed().filter{!it.java.isInterface}.forEach { clazz ->
+        cObject.javaClass.kotlin.allSuperclasses.reversed().filter { !it.java.isInterface }.forEach { clazz ->
             //これらのクラスは除外
             if (clazz != Any::class && clazz != CitrusObject::class) {
                 val section = PropertySection(
-                        if (clazz.annotations.any{it is CObject})
-                            (clazz.annotations.first{it is CObject} as CObject).name
+                        if (clazz.annotations.any { it is CObject })
+                            (clazz.annotations.first { it is CObject } as CObject).name
                         else
                             "無題"
                 )
                 //CPropertyアノテーションを持ったプロパティのみ登録
-                clazz.memberProperties.filter {it.annotations.any{it is CProperty} }
+                clazz.memberProperties.filter { it.annotations.any { it is CProperty } }
                         .forEach { p ->
                             section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null, null))
                         }
@@ -212,11 +210,11 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         //cObject本体のプロパティを登録
         val section = PropertySection(
-                if (cObject.javaClass.annotations.any{it is CObject})
-                    (cObject.javaClass.kotlin.annotations.first{it is CObject} as CObject).name
+                if (cObject.javaClass.annotations.any { it is CObject })
+                    (cObject.javaClass.kotlin.annotations.first { it is CObject } as CObject).name
                 else
                     "無題")
-        cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.any{it is CProperty} }
+        cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.any { it is CProperty } }
                 .forEach {
                     section.property.add(PropertyData(it, null, null, null))
                 }
@@ -235,10 +233,10 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
             //CPropertyアノテーションのindexに基づいてソート
             //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
-            p.property.sortBy { (it.kProprety.annotations.first{it is CProperty} as CProperty).index }
+            p.property.sortBy { (it.kProprety.annotations.first { it is CProperty } as CProperty).index }
 
             for ((i, pp) in p.property.withIndex()) {
-                val name = (pp.kProprety.annotations.first{it is CProperty} as CProperty).displayName
+                val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
                 pp.property = v
                 when (v) {
@@ -269,13 +267,13 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         pp.pane = pane
 
                         //キーフレーム追加用コード
-                        slider.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover{
+                        slider.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover {
                             override fun onKeyPressed(it: KeyEvent) {
                                 println("key ${it.code}")
                                 if (it.code == KeyCode.I) {
                                     println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
 
-                                    if(v.keyFrames.size == 0){//初追加の場合
+                                    if (v.keyFrames.size == 0) {//初追加の場合
                                         pane.isVisible = true//表示
                                         pane.minHeight = 10.0
                                     }
@@ -382,7 +380,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     is TextProperty -> {
                         grid.add(Label(name), 0, i)
                         val textArea = TextArea(v.text)
-                        textArea.textProperty().addListener { _,_,n ->
+                        textArea.textProperty().addListener { _, _, n ->
                             v.text = n.toString()
                         }
                         grid.add(textArea, 1, i)
@@ -397,17 +395,54 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
             }
             grid.columnConstraints[1].hgrow = Priority.ALWAYS
-            popupRoot.children.add(accordion)
+            editWindowRoot.children.add(accordion)
         }
+        setupMenu()
+    }
 
+    private fun setupMenu() {
+        val headerGrid = GridPane()
+        headerGrid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
+        headerGrid.rowConstraints.addAll(RowConstraints(), RowConstraints())
+        headerGrid.columnConstraints[1].hgrow = Priority.ALWAYS
+        headerGrid.columnConstraints[0].minWidth = 25.0
+        headerGrid.columnConstraints[0].isFillWidth = true
+        headerGrid.rowConstraints[0].isFillHeight = true
+        headerGrid.hgap = 1.0
+        val headerColorBlock = Pane()
 
+        headerColorBlock.style = "-fx-background-color:#${color.toString().substring(2)}"
+        GridPane.setRowSpan(headerColorBlock, 2)
+        val headerLabel = Label()
+        headerLabel.text = cObject.displayName
+        headerLabel.textFill = Color.WHITE
 
-        if (Settings.popupEditWindow) {
-            val b = Button("OK")
-            b.setOnAction { popup.hide() }
-            popupRoot.children.add(b)
-            popup.scene.root = popupRoot
+        val headerControl = HBox()
+        val slider = CustomSlider()
+        slider.min = 0.0
+        slider.minWidth = 100.0
+        slider.name = "長さ"
+        slider.valueProperty.addListener { _, _, n ->
+            cObject.end = cObject.start + n.toInt()
+            onScaleChanged()
         }
+        headerControl.children.add(slider)
+
+
+        headerGrid.add(headerColorBlock, 0, 0)
+        headerGrid.add(headerLabel, 1, 0)
+        headerGrid.add(headerControl, 1, 1)
+        popupRoot.children.add(headerGrid)
+
+        popupRoot.children.add(Label("コピー"))
+        popupRoot.children.add(Label("分割"))
+
+        popupRoot.spacing = 4.0
+        popupRoot.style = "-fx-base: #323232;-fx-background-color:#383838AA;-fx-border-color:white;-fx-text-fill: white;"
+        popupRoot.effect = DropShadow()
+        popupRoot.padding = Insets(2.0)
+        popup.scene.root = popupRoot
+        popup.isAutoHide = true
 
     }
 
@@ -429,7 +464,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         cObject.layer = new
     }
 
-    fun onMoved(mode : EditMode) {
+    fun onMoved(mode: EditMode) {
         cObject.start = (layoutX / TimelineController.pixelPerFrame).toInt()
         cObject.end = ((layoutX + prefWidth) / TimelineController.pixelPerFrame).toInt()
         //微妙なズレを修正
@@ -476,7 +511,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         cObject.onScaleUpdate()
     }
 
-    fun onDelete(){
+    fun onDelete() {
         (parent as Pane).children.remove(this)
         Statics.project.Layer[cObject.layer].remove(cObject)
         println("ondelete")
