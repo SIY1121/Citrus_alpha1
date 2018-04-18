@@ -292,7 +292,7 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null) {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
         val cObject = (clazz.newInstance() as CitrusObject)
         cObject.layer = layerIndex
@@ -300,12 +300,8 @@ class TimelineController : Initializable {
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"
 
-        if (start == null)
-            cObject.start = glCanvas.currentFrame
-        else
-            cObject.start = start
-
-        cObject.end = (cObject.start + defaultObjectLength * Statics.project.fps).toInt()
+        cObject.start = start ?: glCanvas.currentFrame
+        cObject.end = end ?: (cObject.start + defaultObjectLength * Statics.project.fps).toInt()
         //o.prefWidth = 200.0
         o.onScaleChanged()
         o.setOnMousePressed {

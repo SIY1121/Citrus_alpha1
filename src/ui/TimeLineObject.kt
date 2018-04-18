@@ -435,7 +435,13 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(headerGrid)
 
         popupRoot.children.add(Label("コピー"))
-        popupRoot.children.add(Label("分割"))
+        val divideLabel = Label("分割")
+        divideLabel.setOnMouseClicked {
+            timelineController.addObject(cObject.javaClass,cObject.layer,null,timelineController.glCanvas.currentFrame,cObject.end)
+            cObject.end = timelineController.glCanvas.currentFrame
+            onScaleChanged()
+        }
+        popupRoot.children.add(divideLabel)
 
         popupRoot.spacing = 4.0
         popupRoot.style = "-fx-base: #323232;-fx-background-color:#383838AA;-fx-border-color:white;-fx-text-fill: white;"
