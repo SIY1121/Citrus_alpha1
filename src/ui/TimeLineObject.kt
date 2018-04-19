@@ -224,8 +224,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         for (p in properties) {
             val grid = GridPane()
             val accordion = TitledPane(p.group, grid)
-            grid.columnConstraints.add(ColumnConstraints())
-            grid.columnConstraints.add(ColumnConstraints())
+            grid.columnConstraints.addAll(ColumnConstraints(),ColumnConstraints())
             grid.prefWidthProperty().bind(accordion.widthProperty())
             grid.hgap = 10.0
             grid.vgap = 10.0
@@ -380,6 +379,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     is TextProperty -> {
                         grid.add(Label(name), 0, i)
                         val textArea = TextArea(v.text)
+                        textArea.prefWidth = 100.0
                         textArea.textProperty().addListener { _, _, n ->
                             v.text = n.toString()
                         }
