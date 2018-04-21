@@ -4,6 +4,7 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import properties.MutableProperty
+import properties2.CAnimatableDoubleProperty
 import ui.GlCanvas
 
 /**
@@ -23,25 +24,25 @@ abstract class DrawableObject : CitrusObject() {
     var enabledSelectedOutline: Boolean = true
 
     @CProperty("X", 0)
-    val x = MutableProperty()
+    val x = CAnimatableDoubleProperty()
     @CProperty("Y", 1)
-    val y = MutableProperty()
+    val y = CAnimatableDoubleProperty()
     @CProperty("Z", 2)
-    val z = MutableProperty()
+    val z = CAnimatableDoubleProperty()
 
     @CProperty("拡大率", 3)
-    val scale = MutableProperty(0.0, 10.0, tick = 0.05, def = 1.0)
+    val scale = CAnimatableDoubleProperty(0.0, 10.0, tick = 0.05, def = 1.0)
     @CProperty("透明度", 4)
-    val alpha = MutableProperty(0.0, 1.0,tick = 0.01 ,def = 1.0)
+    val alpha = CAnimatableDoubleProperty(0.0, 1.0,1.0,0.01)
     @CProperty("回転", 5)
-    val rotate = MutableProperty()
+    val rotate = CAnimatableDoubleProperty()
 
 
     open fun onDraw(gl: GL2, mode: DrawMode) {
-        gl.glTranslated(x.value(frame), y.value(frame), z.value(frame))
-        gl.glRotated(rotate.value(frame), 0.0, 0.0, 1.0)
-        gl.glScaled(scale.value(frame), scale.value(frame), scale.value(frame))
-        gl.glColor4d(1.0,1.0,1.0,alpha.value(frame))
+        gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
+        gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)
+        gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
+        gl.glColor4d(1.0,1.0,1.0,alpha.value.toDouble())
         if (mode == DrawMode.Preview && enabledSelectedOutline && selected) {
 
         }

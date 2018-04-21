@@ -16,6 +16,9 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import properties.FileProperty
 import properties.MutableProperty
+import properties2.CAnimatableDoubleProperty
+import properties2.CFileProperty
+import properties2.CIntegerProperty
 import ui.DialogFactory
 import ui.TimeLineObject
 import ui.TimelineController
@@ -30,13 +33,16 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "/assets/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
-class Audio : CitrusObject(), FileProperty.ChangeListener {
+class Audio : CitrusObject() {
 
     @CProperty("ファイル", 0)
-    val file = FileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
+    val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
     @CProperty("音量", 1)
-    val volume = MutableProperty(0.0, 1.0, 0.0, 1.0, 0.01, 1.0)
+    val volume = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
+
+    @CProperty("開始位置",2)
+    val startPos = CIntegerProperty(min = 0)
 
     var grabber: FFmpegFrameGrabber? = null
     var isGrabberStarted = false
@@ -65,7 +71,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     //var first = true
 
     init {
-        file.listener = this
+        file.valueProperty.addListener { _,_,n->onFileLoad(n.toString()) }
         displayName = "[音声]"
 //        ALut.alutInit()
 //        al = ALFactory.getAL()
@@ -84,10 +90,10 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     }
 
     override fun onFileDropped(file: String) {
-        onChanged(file)
+        onFileLoad(file)
     }
 
-    override fun onChanged(file: String) {
+    private fun onFileLoad(file: String) {
         val dialog = DialogFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
         launch {
@@ -107,6 +113,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
+            startPos.max = audioLength
             end = start + audioLength
             //オーディオ出力準備
             val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat() ?: 0f), 16, 2, true, true)
@@ -128,8 +135,8 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
 
     override fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
         if (audioLength == 0) return
-        if (end - start > audioLength)
-            end = start + audioLength
+        if (end - start > audioLength - startPos.value.toInt())
+            end = start + audioLength - startPos.value.toInt()
 
         //uiObject?.label?.background = Background(BackgroundImage(waveFormImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition(Side.LEFT, 0.0, false, Side.BOTTOM, 0.0, false), BackgroundSize(audioLength.toDouble() / (end - start), 1.0, true, true, false, false)))
 
@@ -148,7 +155,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
     override fun onFrame() {
         if (isGrabberStarted) {
             if (oldFrame != frame) {
-                val now = ((frame + 5) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
+                val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
 
                 if (Math.abs(frame - oldFrame) > 30) {
                     TimelineController.wait = true
@@ -214,7 +221,7 @@ class Audio : CitrusObject(), FileProperty.ChangeListener {
         val shortArray = ShortArray(this.limit())
         this.get(shortArray)
 
-        byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value(frame)).toShort() }.toShortArray())
+        byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value.toDouble()).toShort() }.toShortArray())
         return byteBuffer.array()
     }
 

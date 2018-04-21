@@ -1,14 +1,22 @@
 package objects
 
+import annotation.CProperty
 import effects.Effect
+import properties2.CAnimatableDoubleProperty
+import properties2.CitrusAnimatableProperty
 import ui.TimeLineObject
 import util.Statics
+import kotlin.reflect.KProperty1
+import kotlin.reflect.KType
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaType
 
 /**
  * タイムラインに並ぶオブジェクトのスーパークラス
  * 格納先配列へのバインディング実装済み
  */
-abstract class CitrusObject{
+abstract class CitrusObject {
 
     open val id = "citrus"
     open val name = "CitrusObject"
@@ -18,14 +26,14 @@ abstract class CitrusObject{
             displayNameChangeListener?.onDisplayNameChanged(value)
         }
 
-    var frame:Int = 0
+    var frame: Int = 0
         private set
 
-    val effects : MutableList<Effect> = ArrayList()
+    val effects: MutableList<Effect> = ArrayList()
 
-    val linkedObjects : MutableList<CitrusObject> = ArrayList()
+    val linkedObjects: MutableList<CitrusObject> = ArrayList()
 
-    var uiObject : TimeLineObject? = null
+    var uiObject: TimeLineObject? = null
 
     interface DisplayNameChangeListener {
         fun onDisplayNameChanged(name: String)
@@ -36,32 +44,36 @@ abstract class CitrusObject{
     /**
      * タイムラインで動かされ終わった時に呼び出される
      */
-    open fun onLayoutUpdate(mode : TimeLineObject.EditMode) {
+    open fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
 
     }
 
     /**
      * タイムラインのスケールが変更された時に呼び出される
      */
-    open fun onScaleUpdate(){
+    open fun onScaleUpdate() {
 
     }
 
-    open fun onFileDropped(file : String){
+    open fun onFileDropped(file: String) {
 
     }
 
-    fun onSuperFrame(frameInVideo :Int){
+    fun onSuperFrame(frameInVideo: Int) {
         frame = frameInVideo - start
+        pList.forEach {
+            val v = it.get(this)
+            if(v is CitrusAnimatableProperty<*>)v.frame = frame
+        }
         onFrame()
     }
 
     protected abstract fun onFrame()
 
-    fun isActive(frame : Int) = (frame in start..(end - 1))
+    fun isActive(frame: Int) = (frame in start..(end - 1))
 
     var start: Int = 0
-        set(value){
+        set(value) {
             field = value
             //Statics.project.Layer[layer].sortBy { it.start }
             //Todo ソートは保留
@@ -87,4 +99,14 @@ abstract class CitrusObject{
 
 
         }
+
+    val pList: List<KProperty1<CitrusObject, *>> = this.javaClass.kotlin.memberProperties.filter {
+        println(it.name + " " + it.returnType)
+        it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties2.CitrusAnimatableProperty" }
+    }
+
+    init {
+        println(pList.size)
+    }
+
 }

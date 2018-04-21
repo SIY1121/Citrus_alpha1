@@ -9,24 +9,14 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import annotation.CProperty
-import interpolation.BounceInterpolator
-import interpolation.Interpolator
-import interpolation.InterpolatorManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
-import javafx.scene.Node
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
-import javafx.scene.paint.Paint
-import javafx.scene.shape.Circle
-import javafx.stage.FileChooser
 import objects.*
-import properties.*
-import util.Settings
+import properties2.CitrusProperty
 import util.Statics
 
 
@@ -40,7 +30,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
      * @param node スライダー等の値調整用UI
      * @param pane タイムライン上でキーフレームを表示する親Pane
      */
-    data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var property: Any?, var node: Node?, var pane: Pane?)
+    data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var property: CitrusProperty<*>?, var pane: Pane?)
 
     /**
      * セクション名とプロパティのリストを持つデータクラス
@@ -202,7 +192,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 //CPropertyアノテーションを持ったプロパティのみ登録
                 clazz.memberProperties.filter { it.annotations.any { it is CProperty } }
                         .forEach { p ->
-                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null, null))
+                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null))
                         }
                 properties.add(section)
             }
@@ -216,7 +206,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                     "無題")
         cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.any { it is CProperty } }
                 .forEach {
-                    section.property.add(PropertyData(it, null, null, null))
+                    section.property.add(PropertyData(it, null, null))
                 }
         properties.add(section)
 
@@ -224,173 +214,23 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         for (p in properties) {
             val grid = GridPane()
             val accordion = TitledPane(p.group, grid)
-            grid.columnConstraints.addAll(ColumnConstraints(),ColumnConstraints())
+            grid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
             grid.prefWidthProperty().bind(accordion.widthProperty())
             grid.hgap = 10.0
             grid.vgap = 10.0
             accordion.isAnimated = false
 
             //CPropertyアノテーションのindexに基づいてソート
-            //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CProperty).index - (o2.kProprety.annotations[0] as CProperty).index })
+            //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CitrusProperty).index - (o2.kProprety.annotations[0] as CitrusProperty).index })
             p.property.sortBy { (it.kProprety.annotations.first { it is CProperty } as CProperty).index }
 
             for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
-                pp.property = v
-                when (v) {
-                    is MutableProperty -> {
-
-                        grid.add(Label(name), 0, i)
-                        val slider = CustomSlider()
-                        slider.min = v.min
-                        slider.max = v.max
-                        slider.value = v.value(1)
-                        slider.tick = v.tick
-                        slider.valueProperty.addListener({ _, _, n ->
-                            //キーフレームがない場合
-                            if (v.keyFrames.size == 0) {
-                                v.fixedValue = n.toDouble()
-                            } else {//キーフレームがある場合
-                                v.temporaryValue = n.toDouble()
-                                v.temporaryMode = true
-                            }
-                        })
-
-                        //予めキーフレーム用のPaneは追加しておく
-                        val pane = Pane()
-                        pane.prefHeight = 0.0
-                        pane.style = "-fx-background-color:yellow"
-                        pane.isVisible = false
-                        children.add(pane)//キーフレーム用のPaneを確保
-                        pp.pane = pane
-
-                        //キーフレーム追加用コード
-                        slider.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover {
-                            override fun onKeyPressed(it: KeyEvent) {
-                                println("key ${it.code}")
-                                if (it.code == KeyCode.I) {
-                                    println("added:${v.getKeyFrameIndex(currentFrame) + 1},$currentFrame ,${slider.value}")
-
-                                    if (v.keyFrames.size == 0) {//初追加の場合
-                                        pane.isVisible = true//表示
-                                        pane.minHeight = 10.0
-                                    }
-
-                                    val keyFrameIndex = v.isKeyFrame(currentFrame)
-                                    if (keyFrameIndex == -1) {
-                                        val keyFrame = MutableProperty.KeyFrame(currentFrame, BounceInterpolator(), slider.value)
-                                        v.keyFrames.add(v.getKeyFrameIndex(currentFrame) + 1, keyFrame)
-                                        val circle = Circle()
-                                        circle.layoutY = 5.0
-                                        circle.radius = 5.0
-                                        circle.fill = Paint.valueOf("BLUE")
-                                        circle.layoutX = TimelineController.pixelPerFrame * currentFrame
-
-                                        circle.setOnMouseEntered {
-
-                                            scene.cursor = Cursor.HAND
-                                            it.consume()
-                                        }
-                                        circle.setOnMouseMoved { it.consume() }
-                                        circle.setOnMouseExited {
-                                            scene.cursor = Cursor.DEFAULT
-                                            it.consume()
-                                        }
-
-                                        circle.setOnMouseDragged {
-                                            circle.layoutX = circle.localToParent(it.x, it.y).x
-                                            it.consume()
-                                        }
-                                        circle.setOnMouseReleased {
-                                            keyFrame.frame = (circle.layoutX / TimelineController.pixelPerFrame).toInt()
-                                            v.keyFrames.sortBy { it.frame }
-                                            it.consume()
-                                        }
-                                        circle.setOnMousePressed {
-                                            //押されたキーフレームに移動
-                                            timelineController.glCanvas.currentFrame = keyFrame.frame + cObject.start
-                                            timelineController.caret.layoutX = timelineController.glCanvas.currentFrame * TimelineController.pixelPerFrame
-                                            it.consume()
-                                        }
-
-                                        val contextMenu = ContextMenu()
-                                        for (i in InterpolatorManager.interpolator) {
-                                            val menu = MenuItem(i.key)
-                                            menu.setOnAction {
-                                                keyFrame.interpolation = (i.value.newInstance() as Interpolator)
-                                            }
-                                            contextMenu.items.add(menu)
-                                        }
-                                        circle.setOnMouseClicked {
-                                            if (it.button == MouseButton.SECONDARY) {
-                                                contextMenu.show(circle, it.screenX, it.screenY)
-                                                it.consume()
-                                            }
-                                        }
-
-
-
-                                        pp.pane?.children?.add(circle)
-
-                                        slider.style = "-fx-base:#FFFF00"
-                                        println(v.keyFrames.last().value)
-                                    } else {
-                                        v.keyFrames[keyFrameIndex].value = slider.value
-                                    }
-
-
-                                }
-                            }
-                        }
-                        //GridPane.setMargin(slider, Insets(5.0))
-                        grid.add(slider, 1, i)
-                        pp.node = slider
-                    }
-                    is SelectableProperty -> {
-                        grid.add(Label(name), 0, i)
-                        val choice = ChoiceBox<String>()
-                        choice.items.addAll(v.list)
-                        choice.setOnAction { v.selectedIndex = choice.selectionModel.selectedIndex }
-                        grid.add(choice, 1, i)
-                    }
-
-                    is FileProperty -> {
-                        grid.add(Label(name), 0, i)
-                        val button = Button("ファイルを選択")
-                        button.setOnAction {
-                            val chooser = FileChooser()
-                            chooser.title = "ファイルを選択"
-                            chooser.extensionFilters.addAll(v.filters)
-                            v.file = chooser.showOpenDialog(this.scene.window).path
-                        }
-                        grid.add(button, 1, i)
-
-                    }
-                    is SwitchableProperty -> {
-                        grid.add(Label(name), 0, i)
-                        val checkBox = CheckBox("")
-                        checkBox.isSelected = v.value
-                        checkBox.setOnAction {
-                            v.value = checkBox.isSelected
-                        }
-                        grid.add(checkBox, 1, i)
-                    }
-                    is TextProperty -> {
-                        grid.add(Label(name), 0, i)
-                        val textArea = TextArea(v.text)
-                        textArea.prefWidth = 100.0
-                        textArea.textProperty().addListener { _, _, n ->
-                            v.text = n.toString()
-                        }
-                        grid.add(textArea, 1, i)
-                    }
-                    is ColorProperty -> {
-                        grid.add(Label(name), 0, i)
-                        val colorPicker = ColorPicker()
-                        colorPicker.setOnAction { v.color = colorPicker.value }
-                        grid.add(colorPicker, 1, i)
-                    }
+                if (v is CitrusProperty<*>){
+                    pp.property = v
+                    grid.add(Label(name), 0, i)
+                    grid.add(v.uiNode, 1, i)
                 }
 
             }
@@ -437,7 +277,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(Label("コピー"))
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
-            timelineController.addObject(cObject.javaClass,cObject.layer,null,timelineController.glCanvas.currentFrame,cObject.end)
+            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.glCanvas.currentFrame, cObject.end)
             cObject.end = timelineController.glCanvas.currentFrame
             onScaleChanged()
         }
@@ -483,20 +323,20 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         currentFrame = frame - cObject.start
         for (ps in properties)
             for (p in ps.property) {
-                val pro = p.property
-                when (pro) {
-                    is MutableProperty -> {
-                        //フレーム移動時にプレビュー用モードオフ
-                        pro.temporaryMode = false
-                        (p.node as CustomSlider).value = pro.value(currentFrame)
-
-                        (p.node as CustomSlider).style = "-fx-background-color:" + when {
-                            pro.keyFrames.size == 0 -> "#323232"
-                            pro.isKeyFrame(currentFrame) != -1 -> "#FFFF00"
-                            else -> "#9B5A00"
-                        }
-                    }
-                }
+//                val pro = p.property
+//                when (pro) {
+//                    is MutableProperty -> {
+//                        //フレーム移動時にプレビュー用モードオフ
+//                        pro.temporaryMode = false
+//                        (p.node as CustomSlider).value = pro.value(currentFrame)
+//
+//                        (p.node as CustomSlider).style = "-fx-background-color:" + when {
+//                            pro.keyFrames.size == 0 -> "#323232"
+//                            pro.isKeyFrame(currentFrame) != -1 -> "#FFFF00"
+//                            else -> "#9B5A00"
+//                        }
+//                    }
+//                }
             }
     }
 
@@ -504,16 +344,16 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         layoutX = cObject.start * TimelineController.pixelPerFrame
         prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
 
-        for (ps in properties)
-            for (p in ps.property) {
-                val pro = p.property
-                val pane = p.pane
-                if (pane != null && pro is MutableProperty) {
-                    for ((i, v) in pane.children.withIndex()) {
-                        v.layoutX = pro.keyFrames[i].frame * TimelineController.pixelPerFrame
-                    }
-                }
-            }
+//        for (ps in properties)
+//            for (p in ps.property) {
+//                val pro = p.property
+//                val pane = p.pane
+//                if (pane != null && pro is MutableProperty) {
+//                    for ((i, v) in pane.children.withIndex()) {
+//                        v.layoutX = pro.keyFrames[i].frame * TimelineController.pixelPerFrame
+//                    }
+//                }
+//            }
         cObject.onScaleUpdate()
     }
 

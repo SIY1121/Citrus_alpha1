@@ -8,35 +8,35 @@ import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
 import javafx.stage.FileChooser
-import properties.FileProperty
+import properties2.CFileProperty
 import ui.GlCanvas
 import java.io.File
 
 @CObject("画像","00796BFF","/assets/ic_photo.png")
 @CDroppable(["png","jpg","jpeg","bmp","gif","tif"])
-class Image : DrawableObject(), FileProperty.ChangeListener {
+class Image : DrawableObject(){
 
 
     override val id = "citrus/image"
     override val name = "画像"
 
     @CProperty("ファイル",0)
-    val file = FileProperty(listOf(
+    val file = CFileProperty(listOf(
             FileChooser.ExtensionFilter("画像ファイル", "*.png","*.jpg",".*jpeg","*.bmp","*.gif","*.tif")
     ))
 
     var texture :Texture? = null
 
     init{
-        file.listener = this
+        file.valueProperty.addListener { _,_,n->onFileLoad(n.toString()) }
         displayName = "[画像]"
     }
 
     override fun onFileDropped(file: String) {
-        onChanged(file)
+        onFileLoad(file)
     }
 
-    override fun onChanged(file: String) {
+    fun onFileLoad(file: String) {
         displayName = "[画像] ${File(file).name}"
         GlCanvas.instance.invoke(false,{
             texture = TextureIO.newTexture(File(file),false)
