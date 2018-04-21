@@ -4,13 +4,9 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import javafx.scene.paint.Color
-import properties.ColorProperty
-import properties.MutableProperty
-import properties.SelectableProperty
-import properties2.CAnimatableDoubleProperty
-import properties2.CColorProperty
-import properties2.CSelectableProperty
-import ui.GlCanvas
+import properties.CAnimatableDoubleProperty
+import properties.CColorProperty
+import properties.CSelectableProperty
 import util.Statics
 
 @CObject("図形", "607D8BFF", "/assets/ic_shape.png")

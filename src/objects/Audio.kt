@@ -14,11 +14,9 @@ import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
-import properties.FileProperty
-import properties.MutableProperty
-import properties2.CAnimatableDoubleProperty
-import properties2.CFileProperty
-import properties2.CIntegerProperty
+import properties.CAnimatableDoubleProperty
+import properties.CFileProperty
+import properties.CIntegerProperty
 import ui.DialogFactory
 import ui.TimeLineObject
 import ui.TimelineController

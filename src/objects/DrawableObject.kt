@@ -3,8 +3,7 @@ package objects
 import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
-import properties.MutableProperty
-import properties2.CAnimatableDoubleProperty
+import properties.CAnimatableDoubleProperty
 import ui.GlCanvas
 
 /**

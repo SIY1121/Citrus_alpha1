@@ -6,21 +6,18 @@ import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
-import javafx.beans.property.DoubleProperty
-import javafx.beans.property.SimpleDoubleProperty
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
-import properties2.CDoubleProperty
 import ui.GlCanvas
 import util.Statics
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
-import properties2.CFileProperty
-import properties2.CIntegerProperty
+import properties.CFileProperty
+import properties.CIntegerProperty
 import ui.DialogFactory
 import ui.TimeLineObject
 import ui.TimelineController
@@ -28,9 +25,9 @@ import java.io.*
 import java.nio.ShortBuffer
 
 
-@CObject("動画","F57C00","/assets/ic_movie.png")
-@CDroppable(["asf","wmv","wma","asf","wmv","wma","avi","flv","h261","h263","m4v","m4a","ismv","isma","mkv","mjpg","mjpeg","mp4","mpg","mpeg","mpg","mpeg","m1v","dvd","vob","vob","ts","m2t","m2ts","mts","nut","ogv","webm","chk"])
-class Video : DrawableObject(){
+@CObject("動画", "F57C00", "/assets/ic_movie.png")
+@CDroppable(["asf", "wmv", "wma", "asf", "wmv", "wma", "avi", "flv", "h261", "h263", "m4v", "m4a", "ismv", "isma", "mkv", "mjpg", "mjpeg", "mp4", "mpg", "mpeg", "mpg", "mpeg", "m1v", "dvd", "vob", "vob", "ts", "m2t", "m2ts", "mts", "nut", "ogv", "webm", "chk"])
+class Video : DrawableObject() {
 
     override val id = "citrus/video"
     override val name = "動画"
@@ -38,7 +35,7 @@ class Video : DrawableObject(){
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("動画ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
-    @CProperty("開始位置",1)
+    @CProperty("開始位置", 1)
     val startPos = CIntegerProperty(min = 0)
 
     var grabber: FFmpegFrameGrabber? = null
@@ -54,7 +51,7 @@ class Video : DrawableObject(){
     var oldStart = 0
 
     init {
-        file.valueProperty.addListener{_,_,n->onFileLoad(n.toString())}
+        file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[動画]"
     }
 
@@ -71,9 +68,9 @@ class Video : DrawableObject(){
             grabber = FFmpegFrameGrabber(file)
             grabber?.timestamp
             grabber?.start()
-            if(grabber?.videoCodec==0){
+            if (grabber?.videoCodec == 0) {
                 Platform.runLater {
-                    val alert = Alert(Alert.AlertType.ERROR,"動画コーデックを識別できませんでした", ButtonType.CLOSE)
+                    val alert = Alert(Alert.AlertType.ERROR, "動画コーデックを識別できませんでした", ButtonType.CLOSE)
                     alert.headerText = null
                     dialog.close()
                     alert.showAndWait()
@@ -118,16 +115,17 @@ class Video : DrawableObject(){
         }
     }
 
-    override fun onLayoutUpdate(mode : TimeLineObject.EditMode) {
-        if(videoLength==0)return
-        if(end - start > videoLength - startPos.value.toInt())
+    override fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
+        if (videoLength == 0) return
+        if (end - start > videoLength - startPos.value.toInt())
             end = start + videoLength - startPos.value.toInt()
 
-        if(mode==TimeLineObject.EditMode.DecrementLength){
-            val dif = start-oldStart
+        if (mode == TimeLineObject.EditMode.DecrementLength) {
+            val dif = start - oldStart
+            startPos.value = startPos.value.toInt() + dif
 
         }
-
+        oldStart = start
         uiObject?.onScaleChanged()
     }
 
@@ -139,18 +137,18 @@ class Video : DrawableObject(){
 
             //フレームが変わった場合にのみ処理
             if (oldFrame != frame) {
-                val now = ((frame+startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
+                val now = ((frame + startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
 
                 //移動距離が30フレーム以上でシーク処理を実行
                 if (Math.abs(frame - oldFrame) > 30 || frame < oldFrame) {
                     TimelineController.wait = true
-                    grabber?.timestamp = Math.max(now - 10000,0)
+                    grabber?.timestamp = Math.max(now - 10000, 0)
                     TimelineController.wait = false
                     buf = grabber?.grabFrame()
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
-                while (grabber?.timestamp ?: 0 <= now && buf!=null) {
+                while (grabber?.timestamp ?: 0 <= now && buf != null) {
                     buf = grabber?.grabImage()
                 }
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight

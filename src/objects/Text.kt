@@ -13,7 +13,6 @@ import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
 import properties.*
-import properties2.*
 import ui.GlCanvas
 import java.awt.GraphicsEnvironment
 import java.nio.ByteBuffer
@@ -78,7 +77,6 @@ class Text : DrawableObject() {
         })
     }
 
-    //TODO なんか反映が不安定
     fun UpdateTexture() {
         t.text = text.value
         t.textAlignment = TextAlignment.CENTER

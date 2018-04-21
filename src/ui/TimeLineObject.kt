@@ -16,7 +16,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import objects.*
-import properties2.CitrusProperty
+import properties.CitrusProperty
 import util.Statics
 
 

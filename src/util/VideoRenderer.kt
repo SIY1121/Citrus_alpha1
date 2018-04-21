@@ -1,5 +1,7 @@
 package util
 
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import ui.GlCanvas
 import java.io.File
@@ -24,7 +26,12 @@ class VideoRenderer {
             //TODO テクスチャ反転問題をプレビュー時に反転して、出力時は普通に出すべきか
             //filter = FFmpegFrameFilterMod("vflip", Statics.project.width, Statics.project.height)
             //filter.start()
-            while (GlCanvas.instance.currentFrame < 260) {
+            val end = Statics.project.Layer.flatten().maxBy { it.end }?.end
+            if (end == null) {
+                Alert(Alert.AlertType.ERROR, "オブジェクトの最終位置を特定できませんでした", ButtonType.OK)
+                return
+            }
+            while (GlCanvas.instance.currentFrame < end) {
                 GlCanvas.instance.display()
                 GlCanvas.instance.currentFrame++
             }

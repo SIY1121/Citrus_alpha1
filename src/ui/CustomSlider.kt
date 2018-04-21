@@ -108,8 +108,6 @@ class CustomSlider : Pane() {
             else -> valueProperty.set(valueProperty.value + (it.screenX - oldX)*tick)
         }
 
-        println("${valueProperty.value} + ${(it.screenX - oldX)*tick} = ${valueProperty.value + (it.screenX - oldX)*tick}")
-
         textField.style = "-fx-background-color:#cecece"
         valueLabel.textFill = Color.WHITE
         dragged = true

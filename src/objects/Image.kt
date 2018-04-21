@@ -8,7 +8,7 @@ import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
 import javafx.stage.FileChooser
-import properties2.CFileProperty
+import properties.CFileProperty
 import ui.GlCanvas
 import java.io.File
 

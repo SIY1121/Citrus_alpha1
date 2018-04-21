@@ -2,15 +2,11 @@ package objects
 
 import annotation.CProperty
 import effects.Effect
-import properties2.CAnimatableDoubleProperty
-import properties2.CitrusAnimatableProperty
+import properties.CitrusAnimatableProperty
 import ui.TimeLineObject
 import util.Statics
 import kotlin.reflect.KProperty1
-import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.javaType
 
 /**
  * タイムラインに並ぶオブジェクトのスーパークラス
@@ -102,7 +98,7 @@ abstract class CitrusObject {
 
     val pList: List<KProperty1<CitrusObject, *>> = this.javaClass.kotlin.memberProperties.filter {
         println(it.name + " " + it.returnType)
-        it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties2.CitrusAnimatableProperty" }
+        it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusAnimatableProperty" }
     }
 
     init {

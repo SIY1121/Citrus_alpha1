@@ -328,6 +328,7 @@ class TimelineController : Initializable {
         }
         allTimelineObjects.add(o)
         layerPane.children.add(o)
+        o.onMoved(TimeLineObject.EditMode.Move)
         layerScrollPane.layout()
         if (file != null) cObject.onFileDropped(file)
         glCanvas.currentObjects.clear()
