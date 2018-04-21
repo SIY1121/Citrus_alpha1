@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import properties.CFileProperty
 import properties.CIntegerProperty
-import ui.DialogFactory
+import ui.WindowFactory
 import ui.TimeLineObject
 import ui.TimelineController
 import java.io.*
@@ -61,7 +61,7 @@ class Video : DrawableObject() {
     }
 
     private fun onFileLoad(file: String) {
-        val dialog = DialogFactory.buildOnProgressDialog("処理中", "動画を読み込み中...")
+        val dialog = WindowFactory.buildOnProgressDialog("処理中", "動画を読み込み中...")
         dialog.show()
         launch {
             //デコーダ準備

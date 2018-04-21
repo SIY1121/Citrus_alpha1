@@ -11,11 +11,11 @@ import javafx.stage.Stage
 /**
  * ソフト内で頻繁に使うダイアログを生成
  */
-class DialogFactory {
+class WindowFactory {
     companion object {
-        fun buildOnProgressDialog(title : String,msg : String):Stage{
+        fun buildOnProgressDialog(title: String, msg: String): Stage {
             val stage = Stage()
-            stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("simpleProgressDialog.fxml")))
+            stage.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource("simpleProgressDialog.fxml")))
             stage.title = title
             stage.isResizable = false
             stage.initModality(Modality.APPLICATION_MODAL)
@@ -25,10 +25,18 @@ class DialogFactory {
             stage.y = (primScreenBounds.height - 100) / 2
             return stage
         }
-        fun ShowTestScene(){
+
+        fun ShowTestScene() {
             val stage = Stage()
-            stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("testScene.fxml")))
+            stage.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource("testScene.fxml")))
             stage.show()
         }
+
+        fun createWindow(file: String): Stage {
+            val stage = Stage()
+            stage.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource(file)))
+            return stage
+        }
+
     }
 }

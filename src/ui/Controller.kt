@@ -2,7 +2,6 @@ package ui
 
 import javafx.application.Platform
 import javafx.beans.InvalidationListener
-import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingNode
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
@@ -11,25 +10,15 @@ import javafx.fxml.Initializable
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.*
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
-import javafx.scene.input.ScrollEvent
 import javafx.scene.layout.*
-import javafx.scene.shape.Line
-import javafx.scene.text.Font
-import javafx.scene.canvas.Canvas
-import javafx.scene.paint.Color
 import javafx.stage.Modality
 import javafx.stage.Stage
-import jogamp.opengl.util.av.impl.FFMPEGMediaPlayer
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
-import org.bytedeco.javacv.FFmpegFrameGrabber
 import util.Statics
 import util.VideoRenderer
 import java.net.URL
 import java.util.*
-import kotlin.collections.ArrayList
 
 class Controller : Initializable {
 
@@ -53,6 +42,10 @@ class Controller : Initializable {
 
     lateinit var canvas : GlCanvas
 
+    lateinit var welcomeScreen : Stage
+
+    var stage : Stage? = null
+
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
         canvas = GlCanvas()
@@ -67,7 +60,13 @@ class Controller : Initializable {
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 
         glCanvas.content = canvas
+    }
 
+    fun showWelcomeScreen(){
+        welcomeScreen = WindowFactory.createWindow("welcome.fxml")
+        welcomeScreen.initOwner(stage)
+        welcomeScreen.initModality(Modality.WINDOW_MODAL)
+        welcomeScreen.showAndWait()
     }
 
     val listener = InvalidationListener{
@@ -118,6 +117,6 @@ class Controller : Initializable {
     }
 
     fun onTest(actionEvent: ActionEvent) {
-        DialogFactory.ShowTestScene()
+        WindowFactory.ShowTestScene()
     }
 }

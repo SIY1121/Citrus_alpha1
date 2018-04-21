@@ -17,7 +17,7 @@ import org.bytedeco.javacv.Frame
 import properties.CAnimatableDoubleProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
-import ui.DialogFactory
+import ui.WindowFactory
 import ui.TimeLineObject
 import ui.TimelineController
 import util.Statics
@@ -92,7 +92,7 @@ class Audio : CitrusObject() {
     }
 
     private fun onFileLoad(file: String) {
-        val dialog = DialogFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
+        val dialog = WindowFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
         launch {
             grabber = FFmpegFrameGrabber(file)

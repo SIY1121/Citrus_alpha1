@@ -13,6 +13,7 @@ import javafx.scene.Scene
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.scene.image.Image
+import javafx.stage.Modality
 import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.StageStyle
@@ -21,6 +22,7 @@ import javafx.stage.Screen.getPrimary
 import objects.ObjectManager
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FFmpegFrameRecorder
+import util.Statics
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.ZipInputStream
@@ -51,7 +53,10 @@ class Main : Application() {
             SplashController.notifyProgress(0.3,"FFmpegを初期化中...")
             FFmpegFrameGrabber.tryLoad()
 
-            val root = FXMLLoader.load<Parent>(javaClass.getResource("main.fxml"))
+            val loader = FXMLLoader(javaClass.getResource("main.fxml"))
+            val root = loader.load<Parent>()
+            val controller = loader.getController<Controller>()
+            controller.stage = primaryStage
             primaryStage.title = "Citrus"
             primaryStage.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
             primaryStage.setOnCloseRequest {
@@ -59,10 +64,19 @@ class Main : Application() {
             }
 
             Platform.runLater {
-                primaryStage.scene = Scene(root, 800.0, 700.0)
-                primaryStage.show()
                 SplashController.notifyProgress(1.0,"完了")
                 splash.close()
+
+                val welcomeScreen = WindowFactory.createWindow("welcome.fxml")
+                welcomeScreen.title = "Citrusへようこそ"
+                welcomeScreen.icons.add(Image(javaClass.getResourceAsStream("/assets/icon.png")))
+                welcomeScreen.initModality(Modality.WINDOW_MODAL)
+                welcomeScreen.showAndWait()
+
+                if(!Statics.project.initialized)System.exit(0)
+
+                primaryStage.scene = Scene(root, 800.0, 700.0)
+                primaryStage.show()
             }
         }).start()
 
