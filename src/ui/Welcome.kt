@@ -16,23 +16,29 @@ import java.util.*
 class Welcome : Initializable {
 
     @FXML
-    lateinit var listView : ListView<String>
+    lateinit var listView: ListView<String>
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
-        listView.items.addAll("project1","project2")
+        listView.items.addAll("project1", "project2")
     }
 
     fun clickNewProject(actionEvent: ActionEvent) {
-        Statics.project.initialized = true
-        listView.scene.window.hide()
+        val dialog = WindowFactory.createWindow("createProject.fxml")
+        dialog.initModality(Modality.WINDOW_MODAL)
+        dialog.initOwner(listView.scene.window)
+        dialog.showAndWait()
+
+        if (Statics.project.initialized)
+            listView.scene.window.hide()
     }
 
     fun clickHelp(actionEvent: ActionEvent) {
         val stage = Stage()
-        stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("about.fxml")))
+        stage.scene = Scene(FXMLLoader.load<Parent>(javaClass.getResource("about.fxml")))
         stage.isResizable = false
         stage.title = "Citrusについて"
-        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(listView.scene.window)
+        stage.initModality(Modality.WINDOW_MODAL)
         stage.show()
     }
 }

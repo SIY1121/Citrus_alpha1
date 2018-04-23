@@ -17,7 +17,7 @@ class VideoRenderer {
             //recorder.videoCodec = 28
             recorder.videoCodecName = "nvenc_h264"
             recorder.videoBitrate = 10000000
-            recorder.frameRate = 60.0
+            recorder.frameRate = Statics.project.fps.toDouble()
             time = System.currentTimeMillis()
             recorder.start()
             GlCanvas.instance.animator.stop()

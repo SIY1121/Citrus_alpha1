@@ -27,7 +27,6 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
      * プロパティとUIを一括管理するためのクラス
      * @param kProprety リフレクションから取得したプロパティの生データ
      * @param property MutableProperty等のそのまま参照できるプロパティ
-     * @param node スライダー等の値調整用UI
      * @param pane タイムライン上でキーフレームを表示する親Pane
      */
     data class PropertyData(val kProprety: KProperty1<CitrusObject, *>, var property: CitrusProperty<*>?, var pane: Pane?)
@@ -83,6 +82,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     private var currentFrame = 0
 
+    val lengthSlider = CustomSlider()
+
     var strictSelected = false
     /**
      * カーソルの位置から
@@ -123,7 +124,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             AnchorPane.setRightAnchor(editWindowRoot, 0.0)
             AnchorPane.setLeftAnchor(editWindowRoot, 0.0)
         } else if (it.button == MouseButton.SECONDARY) {
-
+            lengthSlider.value = (cObject.end - cObject.start).toDouble()
             popup.show(this, it.screenX, it.screenY)
             it.consume()
         }
@@ -258,15 +259,15 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         headerLabel.textFill = Color.WHITE
 
         val headerControl = HBox()
-        val slider = CustomSlider()
-        slider.min = 0.0
-        slider.minWidth = 100.0
-        slider.name = "長さ"
-        slider.valueProperty.addListener { _, _, n ->
+
+        lengthSlider.min = 0.0
+        lengthSlider.minWidth = 100.0
+        lengthSlider.name = "長さ"
+        lengthSlider.valueProperty.addListener { _, _, n ->
             cObject.end = cObject.start + n.toInt()
             onScaleChanged()
         }
-        headerControl.children.add(slider)
+        headerControl.children.add(lengthSlider)
 
 
         headerGrid.add(headerColorBlock, 0, 0)

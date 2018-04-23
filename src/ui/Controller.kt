@@ -80,7 +80,8 @@ class Controller : Initializable {
         stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("about.fxml")))
         stage.isResizable = false
         stage.title = "Citrusについて"
-        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(rootPane.scene.window)
+        stage.initModality(Modality.WINDOW_MODAL)
         stage.show()
     }
 
