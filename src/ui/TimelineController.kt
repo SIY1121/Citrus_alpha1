@@ -371,6 +371,9 @@ class TimelineController : Initializable {
                 when (editMode) {
                     TimeLineObject.EditMode.Move -> {
                         o.layoutX = mouseEvent.x - selectedOffsetX
+
+                        if (o.layoutX < 0) o.layoutX = 0.0
+
                         o.onMoved(editMode)
 
                         snapObjectOnMove(o)//スナップ処理
@@ -398,6 +401,7 @@ class TimelineController : Initializable {
                     }
                     TimeLineObject.EditMode.DecrementLength -> {
                         o.layoutX = mouseEvent.x
+                        if (o.layoutX < 0) o.layoutX = 0.0
                         o.prefWidth = (selectedOrigin - mouseEvent.x) + selectedObjectOldWidth[i] - selectedOffsetX
                         o.onMoved(editMode)
                         snapObjectOnDecrement(o)//スナップ処理
@@ -410,7 +414,7 @@ class TimelineController : Initializable {
             }
         else {
             caret.layoutX = mouseEvent.x
-
+            if(caret.layoutX<0)caret.layoutX = 0.0
         }
 
     }
